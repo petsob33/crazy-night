@@ -5,22 +5,19 @@ https://crazynight.vercel.app
 
 Nasazení: `npx vercel --prod` v této složce.
 
-## Sběr e-mailů (Google Form)
+## Sběr e-mailů (Resend)
 
-Stránka posílá e-maily do Google Formu. Nastavení:
+Formulář posílá e-mail na `/api/subscribe` (`api/subscribe.js`, Vercel funkce). Ta ti pošle
+upozornění na nového zájemce přes [Resend](https://resend.com), zdarma do 3000 e-mailů měsíčně.
 
-1. Vytvoř Google Form s jednou otázkou typu **Krátká odpověď** s názvem „E-mail“ a klikni na **Publikovat**.
-2. Vpravo nahoře „⋮“ → **Získat předvyplněný odkaz**, do pole napiš třeba `test@test.cz` → **Získat odkaz** → zkopíruj ho.
-3. Z odkazu vezmi:
-   - ID formuláře: `https://docs.google.com/forms/d/e/<ID>/viewform?...`
-   - název pole: `entry.123456789=test@test.cz` → `entry.123456789`
-4. V `index.html` vyplň:
-   ```js
-   var GOOGLE_FORM_ACTION = "https://docs.google.com/forms/d/e/<ID>/formResponse";
-   var GOOGLE_FORM_EMAIL_FIELD = "entry.123456789";
+Nastavení (jednou):
+1. Založ účet na resend.com → **API Keys** → **Create API Key** (stačí oprávnění Sending access).
+2. Ve složce projektu nastav proměnné prostředí a nasaď:
    ```
-5. Commitni a pushni.
+   npx vercel env add RESEND_API_KEY production
+   npx vercel env add NOTIFY_EMAIL production   # e-mail, se kterým máš účet na Resendu
+   npx vercel --prod
+   ```
 
-Odpovědi najdeš ve formuláři v záložce **Odpovědi**, odkud je jde propojit s Google tabulkou.
-
-Dokud hodnoty nejsou vyplněné, formulář na stránce nic neodešle a návštěvníkovi ukáže „Zápis spouštíme za pár dní“.
+Bez vlastní domény posílá Resend jen na e-mail, se kterým je účet založený, což pro upozornění stačí.
+Dokud proměnné nejsou nastavené, stránka návštěvníkovi ukáže „Zápis spouštíme za pár dní“.

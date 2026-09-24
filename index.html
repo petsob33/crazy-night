@@ -435,48 +435,40 @@
   });
 
   // ---------- Email signup ----------
-  // E-maily se posílají do Google Formu (odpovědi uvidíš ve formuláři / v napojené tabulce).
-  // Nastavení: stačí vyplnit dvě hodnoty níž (viz README.md).
-  var GOOGLE_FORM_ACTION = ""; // "https://docs.google.com/forms/d/e/XXXX/formResponse"
-  var GOOGLE_FORM_EMAIL_FIELD = ""; // "entry.123456789"
+  // Odesílá se na /api/subscribe (Vercel funkce), která pošle upozornění e-mailem.
   var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  var ERRORS = {
+    email: 'Tohle nevypadá jako e-mail. Zkus to ještě jednou.',
+    not_configured: 'Zápis spouštíme za pár dní. Mrkni sem prosím brzy znovu.',
+    fallback: 'Nepodařilo se odeslat. Zkus to prosím za chvíli znovu.'
+  };
 
   function handleSignup(formEl, inputEl, successEl, errorEl){
     var button = formEl.querySelector('button');
+    function fail(code){
+      errorEl.textContent = ERRORS[code] || ERRORS.fallback;
+      errorEl.classList.add('show');
+      button.disabled = false;
+    }
     formEl.addEventListener('submit', function(e){
       e.preventDefault();
       errorEl.classList.remove('show');
       var email = inputEl.value.trim();
-      if (!EMAIL_RE.test(email)){
-        errorEl.textContent = 'Tohle nevypadá jako e-mail. Zkus to ještě jednou.';
-        errorEl.classList.add('show');
-        inputEl.focus();
-        return;
-      }
-      // honeypot: boti vyplní skryté pole, lidi ne
-      if (formEl.elements.website && formEl.elements.website.value) return;
-
-      if (!GOOGLE_FORM_ACTION || !GOOGLE_FORM_EMAIL_FIELD){
-        errorEl.textContent = 'Zápis spouštíme za pár dní. Mrkni sem prosím brzy znovu.';
-        errorEl.classList.add('show');
-        return;
-      }
+      if (!EMAIL_RE.test(email)){ fail('email'); inputEl.focus(); return; }
 
       button.disabled = true;
-      var body = new URLSearchParams();
-      body.append(GOOGLE_FORM_EMAIL_FIELD, email);
-      // Google Forms neposílá CORS hlavičky, takže odpověď nejde přečíst (no-cors).
-      // Síťová chyba ale fetch shodí, takže ji aspoň poznáme.
-      fetch(GOOGLE_FORM_ACTION, { method: 'POST', mode: 'no-cors', body: body })
-        .then(function(){
+      fetch('/api/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email, website: formEl.elements.website ? formEl.elements.website.value : '' })
+      })
+        .then(function(r){ return r.json().catch(function(){ return { ok: false }; }); })
+        .then(function(data){
+          if (!data.ok){ fail(data.error); return; }
           formEl.style.display = 'none';
           successEl.classList.add('show');
         })
-        .catch(function(){
-          button.disabled = false;
-          errorEl.textContent = 'Nepodařilo se odeslat. Zkontroluj připojení a zkus to znovu.';
-          errorEl.classList.add('show');
-        });
+        .catch(function(){ fail('fallback'); });
     });
   }
 
