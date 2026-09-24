@@ -65,7 +65,7 @@
   }
 
   header{
-    position: relative; z-index: 2;
+    position: relative;
     display:flex; align-items:center; justify-content:space-between;
     padding: 22px 0;
   }
@@ -86,7 +86,7 @@
   .hero{
     display:grid; grid-template-columns: 1.05fr 0.95fr; gap: 56px;
     align-items:center;
-    padding: 28px 0 64px;
+    padding-top: 28px; padding-bottom: 64px;
   }
   .kicker-line{
     color: var(--pink-soft); font-weight: 700; font-size: 14px; margin-bottom: 14px;
@@ -204,11 +204,8 @@
   .draw-again:hover{ border-color: var(--pink); color: var(--ink); }
 
   /* ---------- EXPLAINER ---------- */
-  .explainer{
-    padding: 10px 0 60px;
-    border-top: 1px solid #211C29;
-    max-width: 62ch;
-  }
+  .explainer{ padding-top: 28px; padding-bottom: 60px; }
+  .explainer > *{ max-width: 62ch; }
   .explainer h2{ font-size: 26px; font-weight: 800; margin-bottom: 16px; }
   .explainer p{ color: var(--ink-dim); line-height:1.65; font-size: 16px; }
   .explainer p + p{ margin-top: 12px; }
@@ -217,7 +214,7 @@
   .specs{
     display:flex; flex-wrap:wrap; gap: 0;
     border-top: 1px solid #211C29; border-bottom: 1px solid #211C29;
-    padding: 28px 0; margin-bottom: 64px;
+    padding-top: 28px; padding-bottom: 28px; margin-bottom: 64px;
   }
   .spec{
     flex: 1 1 160px; padding: 0 28px;
@@ -228,9 +225,7 @@
   .spec .lbl{ font-size: 13px; color: var(--ink-faint); margin-top: 4px; }
 
   /* ---------- BOTTOM CTA ---------- */
-  .bottom-cta{
-    padding: 10px 0 70px;
-  }
+  .bottom-cta{ padding-top: 10px; padding-bottom: 70px; }
   .bottom-cta h2{
     font-size: clamp(26px, 3.6vw, 38px); font-weight: 900; max-width: 18ch; line-height:1.1;
   }
