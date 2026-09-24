@@ -5,19 +5,28 @@ https://crazynight.vercel.app
 
 Nasazení: `npx vercel --prod` v této složce.
 
-## Sběr e-mailů (Resend)
+## Sběr e-mailů
 
-Formulář posílá e-mail na `/api/subscribe` (`api/subscribe.js`, Vercel funkce). Ta ti pošle
-upozornění na nového zájemce přes [Resend](https://resend.com), zdarma do 3000 e-mailů měsíčně.
+Formulář posílá e-mail na `/api/subscribe` (`api/subscribe.js`, Vercel funkce), která:
 
-Nastavení (jednou):
-1. Založ účet na resend.com → **API Keys** → **Create API Key** (stačí oprávnění Sending access).
-2. Ve složce projektu nastav proměnné prostředí a nasaď:
-   ```
-   npx vercel env add RESEND_API_KEY production
-   npx vercel env add NOTIFY_EMAIL production   # e-mail, se kterým máš účet na Resendu
-   npx vercel --prod
-   ```
+1. **uloží zájemce** do soukromého úložiště Vercel Blob `crazynight-zajemci` (region fra1),
+2. **pošle upozornění** na pesobusines@gmail.com přes [Resend](https://resend.com).
 
-Bez vlastní domény posílá Resend jen na e-mail, se kterým je účet založený, což pro upozornění stačí.
-Dokud proměnné nejsou nastavené, stránka návštěvníkovi ukáže „Zápis spouštíme za pár dní“.
+Zápis projde, když se povede aspoň jedno z toho, takže se žádný zájemce neztratí.
+
+### Seznam zájemců
+
+```
+npx vercel blob list --prefix zajemci/          # výpis souborů
+npx vercel blob get <pathname>                   # obsah jednoho záznamu
+```
+
+Úložiště najdeš i ve Vercelu: projekt crazynight → **Storage** → crazynight-zajemci.
+
+### Proměnné prostředí (Vercel, Production)
+
+- `RESEND_API_KEY`: klíč z resend.com
+- `NOTIFY_EMAIL`: kam chodí upozornění (bez vlastní domény jen e-mail účtu na Resendu)
+- `BLOB_READ_WRITE_TOKEN`: nastavil Vercel sám při připojení úložiště
+
+Výměna klíče: `npx vercel env rm RESEND_API_KEY production && npx vercel env add RESEND_API_KEY production && npx vercel --prod`
