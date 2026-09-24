@@ -1,6 +1,9 @@
 # Crazy Night – landing page
 
-Statická stránka (jeden `index.html` + `assets/`), připravená pro hostování zdarma na GitHub Pages.
+Statická stránka (jeden `index.html` + `assets/`), hostovaná zdarma na Vercelu:
+https://crazynight.vercel.app
+
+Nasazení: `npx vercel --prod` v této složce.
 
 ## Sběr e-mailů (Google Form)
 
