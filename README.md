@@ -17,8 +17,9 @@ Zápis projde, když se povede aspoň jedno z toho, takže se žádný zájemce 
 ### Seznam zájemců
 
 ```
-npx vercel blob list --prefix zajemci/          # výpis souborů
-npx vercel blob get <pathname>                   # obsah jednoho záznamu
+npm install                              # jednou
+npm run --silent zajemci                 # vypíše zájemce jako CSV (email,cas)
+npm run --silent zajemci > zajemci.csv   # uloží do souboru
 ```
 
 Úložiště najdeš i ve Vercelu: projekt crazynight → **Storage** → crazynight-zajemci.

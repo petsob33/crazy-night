@@ -3,5 +3,8 @@
   "private": true,
   "dependencies": {
     "@vercel/blob": "^2.8.0"
+  },
+  "scripts": {
+    "zajemci": "npx vercel env pull .env.zajemci --environment production --yes >/dev/null 2>&1 && node --env-file=.env.zajemci scripts/zajemci.js; rm -f .env.zajemci"
   }
 }
