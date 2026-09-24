@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Crazy Night — párty karty, co rozsekaj i kámoše</title>
+<meta name="description" content="Crazy Night je párty karetní hra „kdo z vás by…“ pro 4–10 hráčů (18+). Vytáhni si ukázkovou kartu a nech nám e-mail, ozveme se, až bude hra venku.">
+<meta name="theme-color" content="#0B0A0E">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="cs_CZ">
+<meta property="og:title" content="Crazy Night — párty karty, co rozsekaj i kámoše">
+<meta property="og:description" content="Párty karetní hra „kdo z vás by…“ pro 4–10 hráčů (18+). Vytáhni si kartu a zapiš se mezi první.">
+<meta property="og:image" content="https://petsob33.github.io/crazy-night/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;800;900&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    color-scheme: dark;
+    --bg: #0B0A0E;
+    --bg-panel: #16131C;
+    --bg-panel-2: #1D1926;
+    --pink: #FF2E7E;
+    --pink-soft: #FF7CB0;
+    --violet: #7B2FF7;
+    --ink: #F5F2F7;
+    --ink-dim: #A099AC;
+    --ink-faint: #6F6879;
+    --card-w: 220px;
+    --card-h: 300px;
+    --safe-t: env(safe-area-inset-top, 0px);
+    --safe-b: env(safe-area-inset-bottom, 0px);
+  }
+  *{ box-sizing: border-box; }
+  html{ scroll-padding-top: var(--safe-t); }
+  html,body{
+    margin:0; padding:0; height:100%;
+    background: var(--bg);
+    color: var(--ink);
+    font-family:'Manrope', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  body{
+    padding-top: var(--safe-t);
+    padding-bottom: var(--safe-b);
+    overflow-x: hidden;
+  }
+  h1,h2,h3{ font-family:'Unbounded', sans-serif; margin:0; letter-spacing: -0.01em; }
+  a{ color: inherit; }
+  img,svg{ max-width:100%; }
+
+  .wrap{ max-width: 1160px; margin: 0 auto; padding: 0 24px; }
+
+  /* subtle ambient glow, one deliberate accent, not scattered */
+  .glow{
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background:
+      radial-gradient(600px 400px at 82% 8%, rgba(255,46,126,0.16), transparent 60%),
+      radial-gradient(500px 380px at 10% 40%, rgba(123,47,247,0.10), transparent 65%);
+  }
+
+  header{
+    position: relative; z-index: 2;
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 22px 0;
+  }
+  .brand{ display:flex; align-items:center; gap:12px; }
+  /* logo has a pure-black background; screen blending drops it onto the page */
+  .brand img{ height: 38px; width:auto; mix-blend-mode: screen; display:block; }
+  .brand .pub{ font-size: 12px; color: var(--ink-faint); font-weight: 500; }
+  .social{
+    font-size: 13.5px; font-weight: 700; color: var(--ink-dim); text-decoration: none;
+    border: 1.5px solid #322A3C; border-radius: 999px; padding: 8px 14px;
+    transition: border-color .15s ease, color .15s ease;
+  }
+  .social:hover, .social:focus-visible{ border-color: var(--pink); color: var(--ink); outline: none; }
+
+  main{ position: relative; z-index: 1; }
+
+  /* ---------- HERO ---------- */
+  .hero{
+    display:grid; grid-template-columns: 1.05fr 0.95fr; gap: 56px;
+    align-items:center;
+    padding: 28px 0 64px;
+  }
+  .kicker-line{
+    color: var(--pink-soft); font-weight: 700; font-size: 14px; margin-bottom: 14px;
+  }
+  .hero h1{
+    font-size: clamp(34px, 5vw, 58px);
+    line-height: 1.04;
+    font-weight: 900;
+  }
+  .hero h1 .hl{ color: var(--pink); }
+  .hero p.lead{
+    margin-top: 18px; max-width: 46ch;
+    font-size: 17px; line-height: 1.55; color: var(--ink-dim);
+  }
+
+  form.signup{
+    margin-top: 30px; display:flex; gap: 10px; max-width: 420px; flex-wrap: wrap;
+  }
+  form.signup input[type="email"]{
+    flex: 1 1 220px; min-width: 0;
+    background: var(--bg-panel); border: 1px solid #2A2433;
+    color: var(--ink); font-family:'Manrope'; font-size: 15px;
+    padding: 14px 16px; border-radius: 10px; outline: none;
+  }
+  form.signup input[type="email"]::placeholder{ color: var(--ink-faint); }
+  form.signup input[type="email"]:focus{ border-color: var(--pink); }
+  form.signup button{
+    background: var(--pink); color: #1A0510; border: none;
+    font-family:'Unbounded'; font-weight: 700; font-size: 14.5px;
+    padding: 14px 22px; border-radius: 10px; cursor:pointer;
+    transition: transform .15s ease, background .15s ease;
+    white-space: nowrap;
+  }
+  form.signup button:hover{ transform: translateY(-1px); background: var(--pink-soft); }
+  form.signup button:active{ transform: translateY(0); }
+  form.signup button:focus-visible, form.signup input:focus-visible{
+    outline: 2px solid var(--pink-soft); outline-offset: 2px;
+  }
+  .fineprint{ margin-top: 10px; font-size: 12.5px; color: var(--ink-faint); max-width: 420px; line-height: 1.5; }
+  .form-error{ display:none; margin-top: 8px; font-size: 13px; color: var(--pink-soft); }
+  .form-error.show{ display:block; }
+  .hp{ position:absolute; left:-9999px; width:1px; height:1px; overflow:hidden; }
+  form.signup button[disabled]{ opacity: .6; cursor: wait; transform: none; }
+  .success-msg{
+    display:none; margin-top: 30px; max-width: 420px;
+    background: rgba(255,46,126,0.08); border: 1px solid rgba(255,46,126,0.35);
+    border-radius: 10px; padding: 16px 18px; font-size: 14.5px; color: var(--ink);
+  }
+  .success-msg.show{ display:block; }
+  .success-msg b{ color: var(--pink-soft); }
+
+  /* ---------- CARD DRAW WIDGET ---------- */
+  .deck-stage{
+    display:flex; flex-direction:column; align-items:center; gap:22px;
+    perspective: 1400px;
+  }
+  .deck{
+    position: relative; width: var(--card-w); height: var(--card-h);
+  }
+  .card{
+    position:absolute; inset:0;
+    border-radius: 14px;
+    transform-style: preserve-3d;
+    transition: transform .55s cubic-bezier(.2,.8,.2,1);
+    cursor: pointer;
+  }
+  .card .face{
+    position:absolute; inset:0; border-radius: 14px;
+    backface-visibility: hidden;
+    display:flex; align-items:center; justify-content:center;
+    padding: 26px;
+    text-align:center;
+  }
+  .card .back{
+    background:
+      repeating-linear-gradient(135deg, #1D1926 0 10px, #221D2C 10px 20px);
+    border: 1.5px solid #322A3C;
+    box-shadow: 0 18px 40px -12px rgba(0,0,0,0.7);
+  }
+  .card .back img{ width: 88%; mix-blend-mode: screen; pointer-events:none; }
+  .card:focus-visible{ outline: 2px solid var(--pink-soft); outline-offset: 6px; }
+  .card .front{
+    background: linear-gradient(160deg, #1C0E17, #0F0A14 65%);
+    border: 1.5px solid rgba(255,46,126,0.4);
+    transform: rotateY(180deg);
+    box-shadow: 0 0 0 1px rgba(255,46,126,0.08) inset, 0 18px 40px -12px rgba(0,0,0,0.8);
+  }
+  .card .front p{
+    font-family:'Unbounded'; font-weight: 700; font-size: 17px; line-height: 1.4;
+    color: var(--ink);
+    text-shadow: 0 0 22px rgba(255,46,126,0.45);
+  }
+  .card.flipped{ transform: rotateY(180deg); }
+
+  .deck-stack-deco{
+    position:absolute; inset:0;
+  }
+  .deco-card{
+    position:absolute; inset:0; border-radius:14px;
+    background: repeating-linear-gradient(135deg, #17131D 0 10px, #1B1622 10px 20px);
+    border: 1.5px solid #2A2433;
+  }
+
+  .deck-hint{ font-size: 13.5px; color: var(--ink-faint); }
+  .deck-hint b{ color: var(--ink-dim); }
+
+  .draw-again{
+    background: transparent; border: 1.5px solid #322A3C; color: var(--ink-dim);
+    font-family:'Manrope'; font-weight: 600; font-size: 13.5px;
+    padding: 9px 16px; border-radius: 999px; cursor:pointer;
+    transition: border-color .15s ease, color .15s ease;
+    display:none;
+  }
+  .draw-again.show{ display:inline-block; }
+  .draw-again:hover{ border-color: var(--pink); color: var(--ink); }
+
+  /* ---------- EXPLAINER ---------- */
+  .explainer{
+    padding: 10px 0 60px;
+    border-top: 1px solid #211C29;
+    max-width: 62ch;
+  }
+  .explainer h2{ font-size: 26px; font-weight: 800; margin-bottom: 16px; }
+  .explainer p{ color: var(--ink-dim); line-height:1.65; font-size: 16px; }
+  .explainer p + p{ margin-top: 12px; }
+
+  /* ---------- SPEC ROW ---------- */
+  .specs{
+    display:flex; flex-wrap:wrap; gap: 0;
+    border-top: 1px solid #211C29; border-bottom: 1px solid #211C29;
+    padding: 28px 0; margin-bottom: 64px;
+  }
+  .spec{
+    flex: 1 1 160px; padding: 0 28px;
+    border-left: 1px solid #211C29;
+  }
+  .spec:first-child{ border-left: none; padding-left: 0; }
+  .spec .val{ font-family:'Unbounded'; font-weight: 800; font-size: 22px; color: var(--pink-soft); }
+  .spec .lbl{ font-size: 13px; color: var(--ink-faint); margin-top: 4px; }
+
+  /* ---------- BOTTOM CTA ---------- */
+  .bottom-cta{
+    padding: 10px 0 70px;
+  }
+  .bottom-cta h2{
+    font-size: clamp(26px, 3.6vw, 38px); font-weight: 900; max-width: 18ch; line-height:1.1;
+  }
+  .bottom-cta p.lead{ color: var(--ink-dim); margin-top: 14px; max-width: 46ch; font-size: 16px; }
+
+  footer{
+    border-top: 1px solid #211C29;
+    padding: 26px 0 calc(26px + var(--safe-b));
+    display:flex; justify-content:space-between; align-items:center;
+    flex-wrap:wrap; gap:10px;
+    color: var(--ink-faint); font-size: 13px;
+  }
+
+  @media (max-width: 860px){
+    .hero{ grid-template-columns: 1fr; gap: 48px; padding-top: 10px; }
+    .deck-stage{ order: -1; }
+  }
+  @media (max-width: 480px){
+    :root{ --card-w: 190px; --card-h: 258px; }
+    .wrap{ padding: 0 18px; }
+    form.signup{ flex-direction: column; }
+    form.signup button{ width:100%; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .card{ transition: none; }
+    form.signup button{ transition:none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="glow"></div>
+
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <img src="assets/logo.png" alt="Crazy Night" width="104" height="38">
+      <span class="pub">od SobGame</span>
+    </div>
+    <a class="social" href="https://www.tiktok.com/@dyos_app" target="_blank" rel="noopener">TikTok</a>
+  </header>
+</div>
+
+<main>
+  <div class="wrap hero">
+    <div>
+      <div class="kicker-line">Párty karetní hra pro lidi, co unesou pravdu</div>
+      <h1>Karty, co<br>rozsekaj i <span class="hl">nejlepší kámoše.</span></h1>
+      <p class="lead">Žádné nudné otázky. Crazy Night vytáhne na světlo věci, o kterých se ve skupině mluví, jen když je jasno.</p>
+
+      <form class="signup" id="signupForm" novalidate>
+        <label class="hp" aria-hidden="true">Nevyplňuj <input type="text" name="website" tabindex="-1" autocomplete="off"></label>
+        <input type="email" id="emailInput" name="email" placeholder="tvůj@email.cz" required autocomplete="email" inputmode="email" aria-label="Tvůj e-mail">
+        <button type="submit">Chci vědět, kdy padne</button>
+      </form>
+      <div class="form-error" id="formError" role="alert"></div>
+      <div class="fineprint">Žádný spam. Napíšeme jen, až bude hra k dostání. E-mail použijeme jen k tomu a na požádání ho smažeme.</div>
+      <div class="success-msg" id="successMsg" role="status"><b>Jsi v tom.</b> Ozveme se, jakmile padne první karta doopravdy.</div>
+    </div>
+
+    <div class="deck-stage">
+      <div class="deck" id="deck">
+        <div class="deco-card" style="transform: rotate(-7deg) translateY(6px);"></div>
+        <div class="deco-card" style="transform: rotate(5deg) translateY(3px);"></div>
+        <div class="card" id="theCard" role="button" tabindex="0" aria-label="Vytáhnout kartu">
+          <div class="face back"><img src="assets/logo.png" alt=""></div>
+          <div class="face front"><p id="cardText" aria-live="polite">?</p></div>
+        </div>
+      </div>
+      <div class="deck-hint" id="deckHint">Klikni na balíček a <b>vytáhni kartu</b></div>
+      <noscript><div class="deck-hint">Kdo ze skupiny by první prásknul tajemství za 500 Kč?</div></noscript>
+      <button class="draw-again" id="drawAgain">Zamíchat a táhnout znovu</button>
+    </div>
+  </div>
+
+  <div class="wrap explainer">
+    <h2>Co se tady vlastně děje</h2>
+    <p>Crazy Night je párty karetní hra, kde každá karta hodí do místnosti otázku typu „kdo z vás by…“. Nikdo se neschová za obecnou odpověď — hraje se o konkrétní lidi u stolu.</p>
+    <p>Žádné plánování, žádná příprava. Otevřeš balíček, vytáhneš kartu, a skupina si to musí vyřešit mezi sebou.</p>
+  </div>
+
+  <div class="wrap specs">
+    <div class="spec"><div class="val">4–10</div><div class="lbl">hráčů na jednu hru</div></div>
+    <div class="spec"><div class="val">18+</div><div class="lbl">doporučený věk</div></div>
+    <div class="spec"><div class="val">30–90 min</div><div class="lbl">typická herní doba</div></div>
+    <div class="spec"><div class="val">0</div><div class="lbl">pravidel, co si nezapamatuješ</div></div>
+  </div>
+
+  <div class="wrap bottom-cta">
+    <h2>První várka bude omezená.</h2>
+    <p class="lead">Necháváme si e-mail místo peněz — dokud hru nedotáhneme přesně tak, jak má být. Kdo se zapíše teď, dostane early bird nabídku jako první.</p>
+    <form class="signup" id="signupForm2" novalidate style="margin-top:26px;">
+      <label class="hp" aria-hidden="true">Nevyplňuj <input type="text" name="website" tabindex="-1" autocomplete="off"></label>
+      <input type="email" id="emailInput2" name="email" placeholder="tvůj@email.cz" required autocomplete="email" inputmode="email" aria-label="Tvůj e-mail">
+      <button type="submit">Chci vědět, kdy padne</button>
+    </form>
+    <div class="form-error" id="formError2" role="alert"></div>
+    <div class="success-msg" id="successMsg2" role="status"><b>Jsi v tom.</b> Ozveme se, jakmile padne první karta doopravdy.</div>
+  </div>
+</div>
+
+<div class="wrap">
+  <footer>
+    <span>SobGame — Crazy Night, {YEAR}</span>
+    <span>Otázky, které stejně chceš znát. · <a href="https://www.tiktok.com/@dyos_app" target="_blank" rel="noopener">TikTok</a></span>
+  </footer>
+</div>
+
+<script>
+  // ---------- Card draw logic ----------
+  var cards = [
+    "Kdo ze skupiny by první prásknul tajemství za 500 Kč?",
+    "Kdo by nejdýl vydržel bez telefonu na pustém ostrově?",
+    "Kdo si o sobě myslí nejvíc, aniž by k tomu měl(a) důvod?",
+    "Kdo by se nejrychleji sesypal, kdyby ho dneska opustil parťák?",
+    "Kdo je největší drama queen/king v místnosti?",
+    "Komu byste nejmíň věřili, že jde jen na jedno pivo?",
+    "Kdo by první utekl, kdyby na párty dorazila bývalka/bývalý?",
+    "Kdo z vás by prodal kamaráda za pár lajků na Instagramu?",
+    "Kdo naposledy lhal někomu u tohohle stolu — a kdo to ví?",
+    "Kdo by nejdýl vydržel nemluvit, i kdyby šlo o život?"
+  ];
+  var deck = shuffle(cards.slice());
+  var idx = 0;
+  var flipped = false;
+
+  var theCard = document.getElementById('theCard');
+  var cardText = document.getElementById('cardText');
+  var deckHint = document.getElementById('deckHint');
+  var drawAgain = document.getElementById('drawAgain');
+
+  function shuffle(arr){
+    for (var i = arr.length - 1; i > 0; i--){
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+    }
+    return arr;
+  }
+
+  theCard.addEventListener('click', drawCard);
+  theCard.addEventListener('keydown', function(e){
+    if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); drawCard(); }
+  });
+
+  function drawCard(){
+    if (!flipped){
+      cardText.textContent = deck[idx];
+      theCard.classList.add('flipped');
+      flipped = true;
+      deckHint.style.visibility = 'hidden';
+      idx++;
+      if (idx >= deck.length){
+        drawAgain.classList.add('show');
+      }
+    } else {
+      // draw next on tap while already flipped
+      if (idx < deck.length){
+        theCard.classList.remove('flipped');
+        setTimeout(function(){
+          cardText.textContent = deck[idx];
+          theCard.classList.add('flipped');
+          idx++;
+          if (idx >= deck.length){ drawAgain.classList.add('show'); }
+        }, 280);
+      }
+    }
+  }
+
+  drawAgain.addEventListener('click', function(e){
+    e.stopPropagation();
+    deck = shuffle(cards.slice());
+    idx = 0;
+    theCard.classList.remove('flipped');
+    flipped = false;
+    drawAgain.classList.remove('show');
+    deckHint.style.visibility = 'visible';
+  });
+
+  // ---------- Email signup ----------
+  // E-maily se posílají do Google Formu (odpovědi uvidíš ve formuláři / v napojené tabulce).
+  // Nastavení: stačí vyplnit dvě hodnoty níž (viz README.md).
+  var GOOGLE_FORM_ACTION = ""; // "https://docs.google.com/forms/d/e/XXXX/formResponse"
+  var GOOGLE_FORM_EMAIL_FIELD = ""; // "entry.123456789"
+  var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+  function handleSignup(formEl, inputEl, successEl, errorEl){
+    var button = formEl.querySelector('button');
+    formEl.addEventListener('submit', function(e){
+      e.preventDefault();
+      errorEl.classList.remove('show');
+      var email = inputEl.value.trim();
+      if (!EMAIL_RE.test(email)){
+        errorEl.textContent = 'Tohle nevypadá jako e-mail. Zkus to ještě jednou.';
+        errorEl.classList.add('show');
+        inputEl.focus();
+        return;
+      }
+      // honeypot: boti vyplní skryté pole, lidi ne
+      if (formEl.elements.website && formEl.elements.website.value) return;
+
+      if (!GOOGLE_FORM_ACTION || !GOOGLE_FORM_EMAIL_FIELD){
+        errorEl.textContent = 'Zápis spouštíme za pár dní. Mrkni sem prosím brzy znovu.';
+        errorEl.classList.add('show');
+        return;
+      }
+
+      button.disabled = true;
+      var body = new URLSearchParams();
+      body.append(GOOGLE_FORM_EMAIL_FIELD, email);
+      // Google Forms neposílá CORS hlavičky, takže odpověď nejde přečíst (no-cors).
+      // Síťová chyba ale fetch shodí, takže ji aspoň poznáme.
+      fetch(GOOGLE_FORM_ACTION, { method: 'POST', mode: 'no-cors', body: body })
+        .then(function(){
+          formEl.style.display = 'none';
+          successEl.classList.add('show');
+        })
+        .catch(function(){
+          button.disabled = false;
+          errorEl.textContent = 'Nepodařilo se odeslat. Zkontroluj připojení a zkus to znovu.';
+          errorEl.classList.add('show');
+        });
+    });
+  }
+
+  handleSignup(document.getElementById('signupForm'), document.getElementById('emailInput'), document.getElementById('successMsg'), document.getElementById('formError'));
+  handleSignup(document.getElementById('signupForm2'), document.getElementById('emailInput2'), document.getElementById('successMsg2'), document.getElementById('formError2'));
+
+  document.querySelectorAll('footer span:first-child').forEach(function(el){
+    el.textContent = el.textContent.replace('{YEAR}', new Date().getFullYear());
+  });
+</script>
+
+</body>
+</html>
