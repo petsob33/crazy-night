@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Crazy Night Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Russo+One&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B0B0F; --panel:#15141B; --panel-2:#1D1B25; --line:#2A2733;
+    --ink:#F5F2F7; --ink-dim:#B9B3C2; --ink-faint:#7D7689;
+    --pink:#E8237F; --pink-soft:#FF7CB0; --ok:#3DDC97; --warn:#FFC857; --err:#FF5C6C;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html,body{ height:100%; }
+  body{ background:var(--bg); color:var(--ink); font:15px/1.5 Manrope, system-ui, sans-serif; }
+  button, input, select, textarea{ font:inherit; color:inherit; }
+  button{ cursor:pointer; }
+
+  .app{ display:grid; grid-template-columns: minmax(340px, 440px) 1fr; grid-template-rows:auto 1fr; height:100vh; }
+  header{ grid-column:1/-1; display:flex; align-items:center; gap:18px; padding:14px 22px; border-bottom:1px solid var(--line); }
+  .logo{ font-family:"Russo One"; font-size:20px; }
+  .logo span{ color:var(--pink); }
+  .spacer{ flex:1; }
+  .meter{ display:flex; align-items:center; gap:10px; font-size:13px; color:var(--ink-dim); }
+  .meter .bar{ width:120px; height:6px; border-radius:6px; background:var(--panel-2); overflow:hidden; }
+  .meter .bar i{ display:block; height:100%; background:var(--pink); }
+  .model{ font-size:12px; color:var(--ink-faint); }
+
+  /* Chat */
+  .chat{ display:flex; flex-direction:column; border-right:1px solid var(--line); min-height:0; }
+  .messages{ flex:1; overflow-y:auto; padding:18px; display:flex; flex-direction:column; gap:10px; }
+  .msg{ max-width:92%; padding:10px 14px; border-radius:14px; white-space:pre-wrap; word-wrap:break-word; }
+  .msg.user{ align-self:flex-end; background:var(--pink); color:#fff; border-bottom-right-radius:4px; }
+  .msg.ai{ align-self:flex-start; background:var(--panel-2); border-bottom-left-radius:4px; }
+  .msg.ai ul{ padding-left:18px; white-space:normal; }
+  .msg.tool{ align-self:flex-start; font-size:12.5px; color:var(--ink-faint); padding:0 4px; }
+  .msg.tool.err{ color:var(--err); }
+  .typing{ align-self:flex-start; color:var(--ink-faint); font-size:13px; padding:0 4px; }
+  .empty-chat{ margin:auto 0; color:var(--ink-dim); }
+  .empty-chat h2{ font-family:"Russo One"; font-weight:400; font-size:22px; color:var(--ink); margin-bottom:8px; }
+  .chips{ display:flex; flex-wrap:wrap; gap:8px; padding:0 18px 10px; }
+  .chip{ background:var(--panel); border:1px solid var(--line); border-radius:999px; padding:6px 12px; font-size:13px; color:var(--ink-dim); }
+  .chip:hover{ border-color:var(--pink); color:var(--ink); }
+  form.composer{ display:flex; gap:8px; padding:12px 18px 18px; }
+  form.composer textarea{ flex:1; resize:none; height:48px; max-height:160px; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:12px 14px; outline:none; }
+  form.composer textarea:focus{ border-color:var(--pink); }
+  .btn{ background:var(--pink); color:#fff; border:0; border-radius:12px; padding:0 18px; font-weight:700; }
+  .btn:disabled{ opacity:.5; cursor:wait; }
+
+  /* Board */
+  .board{ overflow-y:auto; padding:18px 22px 40px; min-height:0; }
+  .tabs{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:16px; }
+  .tab{ background:none; border:1px solid var(--line); border-radius:999px; padding:5px 12px; font-size:13px; color:var(--ink-dim); }
+  .tab.on{ background:var(--ink); color:var(--bg); border-color:var(--ink); }
+  .grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:16px; }
+  .post{ background:var(--panel); border:1px solid var(--line); border-radius:16px; overflow:hidden; display:flex; flex-direction:column; }
+  .media{ height:440px; background:#000; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+  .media video{ display:block; width:100%; height:100%; object-fit:contain; background:#000; }
+  .placeholder{ padding:24px; text-align:center; color:var(--ink-faint); font-size:13px; }
+  .placeholder .q{ font-family:"Russo One"; color:var(--pink); font-size:20px; line-height:1.25; margin-bottom:12px; }
+  .spin{ width:28px; height:28px; border:3px solid var(--line); border-top-color:var(--pink); border-radius:50%; animation:spin 1s linear infinite; margin:0 auto 10px; }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  .body{ padding:14px; display:flex; flex-direction:column; gap:10px; font-size:14px; }
+  .row{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .pill{ font-size:11.5px; font-weight:700; padding:3px 9px; border-radius:999px; background:var(--panel-2); color:var(--ink-dim); }
+  .pill.s-generuje{ color:var(--warn); } .pill.s-video{ color:var(--pink-soft); } .pill.s-schvaleno{ color:var(--ok); }
+  .pill.s-zverejneno{ background:var(--ok); color:#0B0B0F; } .pill.s-chyba{ color:var(--err); }
+  .meta{ font-size:12px; color:var(--ink-faint); }
+  .card-q{ font-family:"Russo One"; color:var(--pink); font-size:16px; line-height:1.3; }
+  .hook{ color:var(--ink-dim); font-style:italic; }
+  .caption{ background:var(--panel-2); border-radius:10px; padding:10px 12px; white-space:pre-wrap; position:relative; }
+  .caption .tags{ color:var(--pink-soft); margin-top:4px; }
+  .notes{ font-size:13px; color:var(--ink-dim); }
+  details{ font-size:12.5px; color:var(--ink-faint); }
+  details summary{ cursor:pointer; }
+  details p{ margin-top:6px; white-space:pre-wrap; }
+  .err{ color:var(--err); font-size:12.5px; white-space:pre-wrap; }
+  .actions{ display:flex; gap:6px; flex-wrap:wrap; }
+  .a{ background:var(--panel-2); border:1px solid var(--line); border-radius:9px; padding:6px 10px; font-size:13px; font-weight:600; text-decoration:none; color:var(--ink); }
+  .a:hover{ border-color:var(--pink); }
+  .a.primary{ background:var(--pink); border-color:var(--pink); color:#fff; }
+  .a.ghost{ background:none; color:var(--ink-faint); }
+  select.a{ padding:5px 6px; }
+  .empty-board{ color:var(--ink-faint); padding:40px 0; text-align:center; }
+  .setup{ margin:0 18px 12px; background:#2A1320; border:1px solid var(--pink); border-radius:12px; padding:12px 14px; font-size:13.5px; }
+  .setup code{ background:#0006; padding:1px 5px; border-radius:5px; }
+  .toast{ position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:var(--ink); color:var(--bg); padding:8px 16px; border-radius:10px; font-weight:600; font-size:14px; opacity:0; transition:opacity .2s; pointer-events:none; }
+  .toast.show{ opacity:1; }
+
+  @media (max-width: 860px){
+    .app{ grid-template-columns:1fr; grid-template-rows:auto 60vh auto; height:auto; }
+    .chat{ border-right:0; border-bottom:1px solid var(--line); }
+    .meter .bar{ width:70px; }
+    .model{ display:none; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="logo">Crazy<span>Night</span> Studio</div>
+    <div class="spacer"></div>
+    <div class="meter" title="Útrata za Veo tento měsíc"><span>Veo</span><div class="bar"><i id="budgetBar" style="width:0"></i></div><span id="budgetText">$0 / $0</span></div>
+    <div class="model" id="modelName"></div>
+  </header>
+
+  <section class="chat">
+    <div class="messages" id="messages"></div>
+    <div id="setup"></div>
+    <div class="chips" id="chips"></div>
+    <form class="composer" id="composer">
+      <textarea id="input" placeholder="Napiš manažerovi… (Enter odešle)" rows="1"></textarea>
+      <button class="btn" id="send">Poslat</button>
+    </form>
+  </section>
+
+  <section class="board">
+    <div class="tabs" id="tabs"></div>
+    <div class="grid" id="grid"></div>
+  </section>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+const STATUSES = ['vše', 'návrh', 'generuje se', 'video hotové', 'schváleno', 'zveřejněno', 'chyba'];
+const PILL = { 'návrh':'', 'generuje se':'s-generuje', 'video hotové':'s-video', 'schváleno':'s-schvaleno', 'zveřejněno':'s-zverejneno', 'chyba':'s-chyba' };
+const PROMPTS = [
+  'Naplánuj obsah na tento týden',
+  'Udělej 1 video s nejbrutálnější kartou',
+  'Vymysli 10 nových karet',
+  'Co mám dneska postnout?',
+];
+
+let state = { posts: [], chat: [], busy: false };
+let filter = 'vše';
+let sending = false;
+let chatLen = -1;
+const rendered = new Map(); // post id -> { key, el }
+
+function toast(t){ const el = $('toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('show'), 1800); }
+
+// Minimal markdown: **bold**, "- " lists, line breaks.
+function md(text){
+  const lines = esc(text).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').split('\n');
+  let out = '', inList = false;
+  for (const l of lines){
+    const m = /^\s*(?:[-*•]|\d+\.)\s+(.*)/.exec(l);
+    if (m){ if (!inList){ out += '<ul>'; inList = true; } out += `<li>${m[1]}</li>`; continue; }
+    if (inList){ out += '</ul>'; inList = false; }
+    out += l + '\n';
+  }
+  return (inList ? out + '</ul>' : out).trim();
+}
+
+function renderChat(){
+  const box = $('messages');
+  const busy = state.busy || sending;
+  const key = state.chat.length + ':' + busy;
+  if (key === chatLen) return;
+  chatLen = key;
+  const atBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 60;
+  if (!state.chat.length && !busy){
+    box.innerHTML = `<div class="empty-chat"><h2>Ahoj, jsem tvůj marketing manažer.</h2>Řekni mi, co potřebuješ — naplánuju posty, napíšu popisky a vygeneruju videa přes Veo. Hotové posty najdeš vpravo.</div>`;
+  } else {
+    box.innerHTML = state.chat.map((m) => m.role === 'tool'
+      ? `<div class="msg tool ${m.error ? 'err' : ''}">${m.error ? '⚠ ' : '⚙ '}${esc(m.text)}${m.error ? ': ' + esc(m.error) : ''}</div>`
+      : `<div class="msg ${m.role}">${m.role === 'ai' ? md(m.text) : esc(m.text)}</div>`).join('')
+      + (busy ? '<div class="typing">Manažer přemýšlí…</div>' : '');
+  }
+  if (atBottom || sending) box.scrollTop = box.scrollHeight;
+  $('send').disabled = busy;
+}
+
+function postHtml(p){
+  const pill = `<span class="pill ${PILL[p.status] || ''}">${esc(p.status)}</span>`;
+  let media;
+  if (p.video) media = `<video src="/video/${esc(p.video)}" controls playsinline preload="metadata"></video>`;
+  else if (p.status === 'generuje se') media = `<div class="placeholder"><div class="spin"></div>${esc(p.progress || 'Generuje se…')}<br><small>trvá to obvykle 1–5 minut</small></div>`;
+  else media = `<div class="placeholder"><div class="q">${esc(p.card_text)}</div>Zatím bez videa</div>`;
+  const tags = (p.hashtags || []).map((h) => h.startsWith('#') ? h : '#' + h).join(' ');
+  const canGen = p.status !== 'generuje se';
+  return `
+    <div class="media">${media}</div>
+    <div class="body">
+      <div class="row">${pill}<span class="meta">#${p.id}${p.format ? ' · ' + esc(p.format) : ''}${p.planned_date ? ' · 📅 ' + esc(p.planned_date) : ''}</span></div>
+      <div class="card-q">${esc(p.card_text)}</div>
+      ${p.hook ? `<div class="hook">„${esc(p.hook)}“</div>` : ''}
+      ${p.caption ? `<div class="caption">${esc(p.caption)}${tags ? `<div class="tags">${esc(tags)}</div>` : ''}</div>` : ''}
+      ${p.notes ? `<div class="notes">💡 ${esc(p.notes)}</div>` : ''}
+      ${p.error ? `<div class="err">${esc(p.error)}</div>` : ''}
+      ${p.veo_prompt ? `<details><summary>Veo prompt</summary><p>${esc(p.veo_prompt)}</p></details>` : ''}
+      <div class="actions">
+        ${p.caption ? `<button class="a" data-act="copy">Kopírovat popisek</button>` : ''}
+        ${p.video ? `<a class="a" href="/video/${esc(p.video)}" download="crazynight-${p.id}.mp4">Stáhnout</a>` : ''}
+        ${p.status === 'video hotové' ? `<button class="a primary" data-act="approve">Schválit</button>` : ''}
+        ${p.status === 'schváleno' ? `<button class="a primary" data-act="published">Zveřejněno ✓</button>` : ''}
+        ${['schváleno', 'zveřejněno'].includes(p.status) ? `<button class="a ghost" data-act="reopen">Vrátit</button>` : ''}
+      </div>
+      ${canGen && !['schváleno', 'zveřejněno'].includes(p.status) ? `
+      <div class="actions">
+        <select class="a" data-f="model" title="Model"><option value="lite">Veo Lite · $0.40</option><option value="fast">Veo Fast · $0.80</option><option value="standard">Veo 3.1 · $3.20</option></select>
+        <button class="a ${p.video ? '' : 'primary'}" data-act="generate">${p.video ? 'Vygenerovat znovu' : 'Vygenerovat video'}</button>
+        <button class="a ghost" data-act="delete">Smazat</button>
+      </div>` : ''}
+    </div>`;
+}
+
+function renderBoard(){
+  $('tabs').innerHTML = STATUSES.map((s) => {
+    const n = s === 'vše' ? state.posts.length : state.posts.filter((p) => p.status === s).length;
+    return `<button class="tab ${s === filter ? 'on' : ''}" data-s="${s}">${s} ${n ? `<small>${n}</small>` : ''}</button>`;
+  }).join('');
+  const posts = state.posts.filter((p) => filter === 'vše' || p.status === filter);
+  const grid = $('grid');
+  if (!posts.length){
+    rendered.clear();
+    grid.innerHTML = `<div class="empty-board">${state.posts.length ? 'V téhle kategorii nic není.' : 'Zatím žádné posty. Požádej manažera vlevo, ať něco připraví.'}</div>`;
+    return;
+  }
+  grid.querySelector('.empty-board')?.remove();
+  const keep = new Set();
+  posts.forEach((p, i) => {
+    const key = JSON.stringify(p);
+    let r = rendered.get(p.id);
+    // Only rebuild cards whose data changed, so a playing video isn't interrupted by polling.
+    if (!r || r.key !== key){
+      const el = r?.el || document.createElement('article');
+      el.className = 'post'; el.dataset.id = p.id; el.innerHTML = postHtml(p);
+      r = { key, el }; rendered.set(p.id, r);
+    }
+    if (grid.children[i] !== r.el) grid.insertBefore(r.el, grid.children[i] || null);
+    keep.add(p.id);
+  });
+  for (const [id, r] of rendered) if (!keep.has(id)){ r.el.remove(); rendered.delete(id); }
+}
+
+function renderHeader(){
+  const b = state.budget || { spent: 0, limit: 0 };
+  $('budgetText').textContent = `$${b.spent.toFixed(2)} / $${b.limit}`;
+  $('budgetBar').style.width = Math.min(100, b.limit ? b.spent / b.limit * 100 : 0) + '%';
+  $('modelName').textContent = state.model || '';
+  $('setup').innerHTML = state.hasKey ? '' : `<div class="setup"><b>Chybí klíč ke Gemini API.</b> Vytvoř ho na <a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--pink-soft)">aistudio.google.com/apikey</a>, vlož do <code>marketing/.env</code> jako <code>GEMINI_API_KEY=…</code> a restartuj studio.</div>`;
+}
+
+async function refresh(){
+  try {
+    state = await (await fetch('/api/state')).json();
+    renderHeader(); renderChat(); renderBoard();
+  } catch {}
+}
+
+async function send(text){
+  text = text.trim();
+  if (!text || sending || state.busy) return;
+  sending = true;
+  state.chat.push({ role: 'user', text });
+  chatLen = -1; renderChat();
+  $('input').value = '';
+  try {
+    const r = await fetch('/api/chat', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ message: text }) });
+    if (!r.ok) toast((await r.json()).error || 'Chyba');
+  } catch { toast('Studio neodpovídá'); }
+  sending = false; chatLen = -1;
+  await refresh();
+}
+
+$('chips').innerHTML = PROMPTS.map((p) => `<button class="chip">${esc(p)}</button>`).join('');
+$('chips').addEventListener('click', (e) => { if (e.target.classList.contains('chip')) send(e.target.textContent); });
+$('composer').addEventListener('submit', (e) => { e.preventDefault(); send($('input').value); });
+$('input').addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); send($('input').value); } });
+$('tabs').addEventListener('click', (e) => { const t = e.target.closest('.tab'); if (t){ filter = t.dataset.s; renderBoard(); } });
+
+$('grid').addEventListener('click', async (e) => {
+  const btn = e.target.closest('[data-act]'); if (!btn) return;
+  const el = btn.closest('.post'); const id = Number(el.dataset.id);
+  const p = state.posts.find((x) => x.id === id); const act = btn.dataset.act;
+  if (act === 'copy'){
+    const tags = (p.hashtags || []).map((h) => h.startsWith('#') ? h : '#' + h).join(' ');
+    await navigator.clipboard.writeText(p.caption + (tags ? '\n\n' + tags : ''));
+    return toast('Popisek zkopírován');
+  }
+  if (act === 'delete' && !confirm('Smazat tenhle post?')) return;
+  const body = { action: act };
+  if (act === 'generate') body.model = el.querySelector('[data-f=model]').value;
+  const r = await fetch('/api/posts/' + id, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+  if (!r.ok) toast((await r.json()).error || 'Chyba');
+  refresh();
+});
+
+refresh();
+setInterval(refresh, 3000);
+</script>
+</body>
+</html>

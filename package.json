@@ -2,9 +2,11 @@
   "name": "crazynight",
   "private": true,
   "dependencies": {
+    "@google/genai": "^2.24.0",
     "@vercel/blob": "^2.8.0"
   },
   "scripts": {
-    "zajemci": "npx vercel env pull .env.zajemci --environment production --yes >/dev/null 2>&1 && node --env-file=.env.zajemci scripts/zajemci.js; rm -f .env.zajemci"
+    "zajemci": "npx vercel env pull .env.zajemci --environment production --yes >/dev/null 2>&1 && node --env-file=.env.zajemci scripts/zajemci.js; rm -f .env.zajemci",
+    "studio": "node --env-file-if-exists=marketing/.env marketing/studio/server.mjs"
   }
 }
