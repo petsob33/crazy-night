@@ -1,0 +1,714 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Crazy Night Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Russo+One&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B0B0F; --panel:#15141B; --panel-2:#1D1B25; --line:#2A2733; --grid:#24212C;
+    --ink:#F5F2F7; --ink-dim:#B9B3C2; --ink-faint:#7D7689;
+    --pink:#E8237F; --pink-soft:#FF7CB0; --ok:#3DDC97; --warn:#FFC857; --err:#FF5C6C;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{ background:var(--bg); color:var(--ink); font:15px/1.5 Manrope, system-ui, sans-serif; min-height:100vh; }
+  button, input, select, textarea{ font:inherit; color:inherit; }
+  button{ cursor:pointer; }
+  a{ color:var(--pink-soft); }
+  .num{ font-variant-numeric: tabular-nums; }
+
+  header{ position:sticky; top:0; z-index:10; background:rgba(11,11,15,.92); backdrop-filter:blur(8px); border-bottom:1px solid var(--line); }
+  .bar{ max-width:1280px; margin:0 auto; padding:12px 20px; display:flex; align-items:center; gap:20px; flex-wrap:wrap; }
+  .logo{ font-family:"Russo One"; font-size:20px; white-space:nowrap; }
+  .logo span{ color:var(--pink); }
+  nav{ display:flex; gap:4px; flex-wrap:wrap; }
+  nav button{ background:none; border:0; padding:7px 12px; border-radius:9px; color:var(--ink-dim); font-weight:600; }
+  nav button:hover{ color:var(--ink); background:var(--panel); }
+  nav button.on{ color:var(--ink); background:var(--panel-2); }
+  .live{ margin-left:auto; font-size:13px; color:var(--ink-faint); display:flex; align-items:center; gap:8px; }
+  .dot{ width:8px; height:8px; border-radius:50%; background:var(--ink-faint); }
+  .dot.run{ background:var(--pink); animation:pulse 1.2s ease-in-out infinite; }
+  @keyframes pulse{ 50%{ opacity:.35; } }
+
+  main{ max-width:1280px; margin:0 auto; padding:22px 20px 60px; }
+  section.tab{ display:none; } section.tab.on{ display:block; }
+  h2{ font-size:18px; font-weight:800; margin-bottom:12px; }
+  h3{ font-size:15px; font-weight:700; margin-bottom:10px; }
+  .sub{ color:var(--ink-faint); font-size:13px; }
+  .grid{ display:grid; gap:16px; }
+  .g4{ grid-template-columns:repeat(4, 1fr); }
+  .g2{ grid-template-columns:1fr 1fr; }
+  .g3{ grid-template-columns:repeat(3, 1fr); }
+  .panel{ background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:18px; min-width:0; }
+  .mt{ margin-top:16px; }
+  .row{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .spread{ display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+
+  .tile .lbl{ color:var(--ink-dim); font-size:13px; font-weight:600; }
+  .tile .val{ font-size:34px; font-weight:800; line-height:1.15; margin-top:4px; }
+  .tile .hint{ font-size:12.5px; color:var(--ink-faint); margin-top:2px; }
+
+  .goal{ padding:12px 0; border-top:1px solid var(--line); }
+  .goal:first-of-type{ border-top:0; padding-top:0; }
+  .progress{ height:8px; border-radius:8px; background:var(--panel-2); overflow:hidden; margin:8px 0 6px; }
+  .progress i{ display:block; height:100%; background:var(--pink); border-radius:8px; }
+  .pace{ font-size:12.5px; color:var(--ink-faint); }
+  .pace b{ color:var(--ink-dim); }
+  .badge{ display:inline-flex; align-items:center; gap:5px; font-size:11.5px; font-weight:700; padding:2px 8px; border-radius:999px; background:var(--panel-2); color:var(--ink-dim); }
+  .badge.ok{ color:var(--ok); } .badge.warn{ color:var(--warn); } .badge.err{ color:var(--err); } .badge.pink{ color:var(--pink-soft); }
+
+  .check{ display:flex; gap:10px; align-items:flex-start; padding:6px 0; }
+  .check input{ margin-top:4px; accent-color:var(--pink); width:16px; height:16px; }
+  .check.done span{ color:var(--ink-faint); text-decoration:line-through; }
+  .week{ font-size:12px; font-weight:800; color:var(--pink-soft); text-transform:uppercase; letter-spacing:.06em; margin-top:10px; }
+
+  .btn{ background:var(--pink); color:#fff; border:0; border-radius:10px; padding:9px 16px; font-weight:700; }
+  .btn:disabled{ opacity:.5; cursor:not-allowed; }
+  .btn.sec{ background:var(--panel-2); color:var(--ink); border:1px solid var(--line); }
+  .btn.sm{ padding:5px 10px; font-size:13px; border-radius:8px; }
+  .btn.ghost{ background:none; border:1px solid var(--line); color:var(--ink-dim); }
+  .btn.sec:hover, .btn.ghost:hover{ border-color:var(--pink); }
+  input[type=text], input[type=number], input[type=date], input[type=time], textarea, select{
+    background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:8px 10px; outline:none;
+  }
+  input:focus, textarea:focus, select:focus{ border-color:var(--pink); }
+  textarea{ width:100%; resize:vertical; min-height:74px; }
+  .chips{ display:flex; gap:6px; flex-wrap:wrap; }
+  .chip{ background:var(--panel-2); border:1px solid var(--line); border-radius:999px; padding:5px 11px; font-size:13px; color:var(--ink-dim); }
+  .chip:hover{ border-color:var(--pink); color:var(--ink); }
+  .seg{ display:inline-flex; background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:3px; }
+  .seg button{ background:none; border:0; padding:5px 12px; border-radius:7px; color:var(--ink-dim); font-weight:600; font-size:13.5px; }
+  .seg button.on{ background:var(--ink); color:var(--bg); }
+
+  /* jobs */
+  .job{ border:1px solid var(--line); border-radius:14px; padding:14px; background:var(--panel-2); }
+  .job + .job{ margin-top:10px; }
+  .job .prompt{ font-weight:700; }
+  .log{ margin-top:10px; max-height:260px; overflow-y:auto; font-size:13px; display:flex; flex-direction:column; gap:4px; }
+  .log .tool{ color:var(--ink-faint); }
+  .log .text{ color:var(--ink); white-space:pre-wrap; background:var(--panel); border-radius:8px; padding:6px 10px; }
+  .log .error{ color:var(--err); white-space:pre-wrap; }
+  .log .user{ color:var(--pink-soft); }
+  .log .info{ color:var(--ink-dim); }
+  .result{ margin-top:10px; white-space:pre-wrap; background:var(--panel); border-left:3px solid var(--pink); border-radius:8px; padding:10px 12px; font-size:14px; }
+  .followup{ display:flex; gap:8px; margin-top:10px; }
+  .followup input{ flex:1; }
+
+  /* videos */
+  .vgrid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:14px; }
+  .vid{ background:var(--panel-2); border:1px solid var(--line); border-radius:14px; overflow:hidden; display:flex; flex-direction:column; }
+  .vid video{ display:block; width:100%; aspect-ratio:9/16; background:#000; object-fit:cover; }
+  .vid .body{ padding:10px 12px 12px; display:flex; flex-direction:column; gap:8px; font-size:13.5px; }
+  .vid .t{ font-weight:700; }
+  .cap{ color:var(--ink-dim); white-space:pre-wrap; max-height:84px; overflow:hidden; font-size:12.5px; }
+
+  /* plan */
+  .slots{ display:grid; grid-template-columns:repeat(7, 1fr); gap:8px; }
+  .slot{ background:var(--panel-2); border:1px solid var(--line); border-radius:12px; padding:10px; text-align:center; font-size:13px; }
+  .slot.off{ opacity:.45; }
+  .slot input[type=time]{ width:100%; margin-top:6px; padding:4px 6px; }
+  .cal{ display:grid; grid-template-columns:repeat(7, 1fr); gap:10px; }
+  .day{ background:var(--panel-2); border:1px solid var(--line); border-radius:12px; padding:10px; min-height:150px; display:flex; flex-direction:column; gap:6px; font-size:13px; min-width:0; }
+  .day.today{ border-color:var(--pink); }
+  .day.off{ opacity:.5; }
+  .day .d{ font-weight:800; }
+  .day video{ width:100%; aspect-ratio:9/16; max-height:150px; object-fit:cover; border-radius:8px; background:#000; }
+  .day select{ width:100%; font-size:12px; padding:5px; }
+
+  /* charts */
+  .chart{ position:relative; width:100%; }
+  .chart svg{ display:block; width:100%; height:auto; overflow:visible; }
+  .chart .ax{ fill:var(--ink-faint); font-size:11px; }
+  .chart .gl{ stroke:var(--grid); stroke-width:1; }
+  .chart .hit{ fill:transparent; cursor:default; }
+  .chart .bar{ fill:var(--pink); }
+  .chart .bar.hover{ fill:var(--pink-soft); }
+  .tip{ position:fixed; pointer-events:none; z-index:50; background:var(--ink); color:var(--bg); border-radius:8px; padding:6px 10px; font-size:12.5px; opacity:0; transition:opacity .1s; white-space:nowrap; }
+  .tip b{ font-size:14px; display:block; }
+  .empty{ color:var(--ink-faint); font-size:13.5px; padding:24px 0; text-align:center; }
+  table{ width:100%; border-collapse:collapse; font-size:13.5px; }
+  th{ text-align:left; color:var(--ink-faint); font-weight:600; font-size:12px; padding:6px 8px; border-bottom:1px solid var(--line); }
+  td{ padding:7px 8px; border-bottom:1px solid var(--grid); }
+  td.r, th.r{ text-align:right; }
+  details summary{ cursor:pointer; color:var(--ink-dim); font-size:13px; margin-top:10px; }
+
+  /* potential */
+  .sl{ display:grid; grid-template-columns: 1fr 110px; gap:4px 12px; align-items:center; margin-bottom:12px; }
+  .sl label{ font-size:13.5px; color:var(--ink-dim); grid-column:1/-1; display:flex; justify-content:space-between; }
+  .sl label b{ color:var(--ink); }
+  .sl input[type=range]{ width:100%; accent-color:var(--pink); }
+  .funnel .f{ display:grid; grid-template-columns: 150px 1fr 110px; gap:12px; align-items:center; padding:6px 0; font-size:14px; }
+  .funnel .track{ height:22px; background:var(--panel-2); border-radius:6px; overflow:hidden; }
+  .funnel .track i{ display:block; height:100%; background:var(--pink); border-radius:4px; min-width:4px; }
+  .big{ font-size:30px; font-weight:800; }
+  ul.plain{ padding-left:18px; color:var(--ink-dim); font-size:14px; }
+  ul.plain li{ margin:4px 0; }
+  .toast{ position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:var(--ink); color:var(--bg); padding:8px 16px; border-radius:10px; font-weight:700; font-size:14px; opacity:0; transition:opacity .2s; pointer-events:none; z-index:60; }
+  .toast.show{ opacity:1; }
+
+  @media (max-width: 980px){
+    .g4{ grid-template-columns:1fr 1fr; } .g2, .g3{ grid-template-columns:1fr; }
+    .cal, .slots{ grid-template-columns:repeat(2, 1fr); }
+    .live{ margin-left:0; }
+  }
+  @media (max-width: 520px){
+    .g4{ grid-template-columns:1fr; }
+    .funnel .f{ grid-template-columns: 1fr 90px; } .funnel .track{ grid-column:1/-1; grid-row:2; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <div class="logo">Crazy<span>Night</span> Dashboard</div>
+    <nav id="nav">
+      <button data-tab="prehled" class="on">Přehled</button>
+      <button data-tab="tvorba">Tvorba</button>
+      <button data-tab="plan">Plán</button>
+      <button data-tab="statistiky">Statistiky</button>
+      <button data-tab="potencial">Potenciál</button>
+    </nav>
+    <div class="live"><span class="dot" id="liveDot"></span><span id="liveText">AI nečinná</span></div>
+  </div>
+</header>
+
+<main>
+  <!-- PŘEHLED -->
+  <section class="tab on" id="tab-prehled">
+    <div class="grid g4" id="kpis"></div>
+    <div class="grid g2 mt">
+      <div class="panel"><div class="spread"><h2>Cíle</h2><button class="btn ghost sm" id="editGoals">Upravit</button></div><div id="goals"></div></div>
+      <div class="panel">
+        <h2>Co je na řadě</h2>
+        <div id="nextPosts"></div>
+        <h3 class="mt">Plán prvního měsíce</h3>
+        <div id="checklist"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TVORBA -->
+  <section class="tab" id="tab-tvorba">
+    <div class="panel">
+      <div class="spread">
+        <h2>Zadat práci AI manažerovi</h2>
+        <div class="seg" id="jobType"><button data-t="video" class="on">Video</button><button data-t="free">Volný úkol</button></div>
+      </div>
+      <textarea id="prompt" placeholder="Např. „video s kartou o bývalé“, nebo nech prázdné a AI vybere kartu sama."></textarea>
+      <div class="spread mt">
+        <div class="chips" id="chips"></div>
+        <div class="row">
+          <label class="sub" id="countWrap">Počet videí <select id="count"><option>1</option><option>2</option><option>3</option></select></label>
+          <button class="btn" id="go">Spustit</button>
+        </div>
+      </div>
+      <p class="sub mt">AI běží v Claude Code a video generuje v Gemini v tvém Chrome. Nech Chrome zapnutý. Jedno video trvá zhruba 5–10 minut, úkoly jedou postupně za sebou.</p>
+    </div>
+    <div class="grid g2 mt">
+      <div class="panel"><h2>Úkoly</h2><div id="jobs"></div></div>
+      <div class="panel"><div class="spread"><h2>Hotová videa</h2><span class="sub" id="vcount"></span></div><div class="vgrid" id="videos"></div></div>
+    </div>
+  </section>
+
+  <!-- PLÁN -->
+  <section class="tab" id="tab-plan">
+    <div class="panel">
+      <div class="spread"><h2>Kdy postovat</h2><span class="sub">Česká TikTok publika jsou nejaktivnější večer 18–21 h, o víkendu později.</span></div>
+      <div class="slots" id="slots"></div>
+    </div>
+    <div class="panel mt">
+      <div class="spread">
+        <h2>Příštích 14 dní</h2>
+        <div class="row"><button class="btn sec sm" id="autoPlan">Rozvrhnout hotová videa</button><button class="btn sm" id="planAI">Nechat AI naplánovat</button></div>
+      </div>
+      <div class="cal" id="cal"></div>
+    </div>
+  </section>
+
+  <!-- STATISTIKY -->
+  <section class="tab" id="tab-statistiky">
+    <div class="spread">
+      <div><h2>Statistiky</h2><div class="sub" id="statsWhen"></div></div>
+      <div class="row">
+        <button class="btn sec sm" id="refreshSignups">Obnovit zájemce</button>
+        <button class="btn sm" id="statsAI">Načíst statistiky z TikToku</button>
+      </div>
+    </div>
+    <div class="grid g4 mt" id="statTiles"></div>
+    <div class="grid g2 mt">
+      <div class="panel"><h3>Noví zájemci po dnech</h3><div class="sub">posledních 30 dní · z formuláře na webu</div><div class="chart mt" id="chSignups"></div></div>
+      <div class="panel"><h3>Sledující na TikToku</h3><div class="sub">podle uložených měření</div><div class="chart mt" id="chFollowers"></div>
+        <div class="row mt"><input type="number" id="manFollowers" placeholder="Sledující" style="width:130px"><button class="btn sec sm" id="saveFollowers">Zapsat ručně</button></div>
+      </div>
+    </div>
+    <div class="panel mt"><h3>Zhlédnutí podle videa</h3><div class="sub">poslední měření z TikToku</div><div class="chart mt" id="chViews"></div>
+      <details><summary>Tabulka videí</summary><div id="vtable"></div></details>
+    </div>
+    <div class="panel mt"><h3>Zájemci</h3><div id="signupList"></div></div>
+  </section>
+
+  <!-- POTENCIÁL -->
+  <section class="tab" id="tab-potencial">
+    <div class="grid g2">
+      <div class="panel">
+        <div class="spread"><h2>Kalkulačka potenciálu</h2><div class="seg" id="presets"><button data-p="kons">Opatrně</button><button data-p="real">Realisticky</button><button data-p="viral">Virál</button></div></div>
+        <div id="sliders" class="mt"></div>
+      </div>
+      <div class="panel">
+        <h2>Za měsíc by to znamenalo</h2>
+        <div class="funnel mt" id="funnel"></div>
+        <div class="grid g2 mt">
+          <div><div class="sub">Obrat za měsíc</div><div class="big num" id="revM"></div></div>
+          <div><div class="sub">Zisk za měsíc (po výrobě)</div><div class="big num" id="profM"></div></div>
+          <div><div class="sub">Obrat za rok</div><div class="big num" id="revY"></div></div>
+          <div><div class="sub">Zisk za rok</div><div class="big num" id="profY"></div></div>
+        </div>
+        <div class="mt sub" id="realConv"></div>
+      </div>
+    </div>
+    <div class="grid g2 mt">
+      <div class="panel">
+        <h2>Realita podle plánu</h2>
+        <ul class="plain">
+          <li>Trh je ověřený (Cards Against Humanity, Kdo to Ví, Deskožrouti), lidi platí <b>300–600 Kč</b>.</li>
+          <li>Sólo projekt s organickým marketingem: první rok spíš <b>stovky až nízké tisíce kusů</b>, řádově <b>50–100 tis. Kč</b> obratu.</li>
+          <li>Strop pro sólo zakladatele bez investora: <b>nízké miliony Kč ročně</b> při dobré exekuci.</li>
+          <li>Hlavní hodnota teď: otestovat celý cyklus produkt → prodej → marketing.</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h2>Cesty ke škálování</h2>
+        <ul class="plain">
+          <li>Tematické balíčky: páry, firmy/teambuilding, studenti</li>
+          <li>Velkoobchod/retail: Alza, Datart, herní obchody</li>
+          <li>Virální zásah přes obsah</li>
+          <li>Licencování do dalších zemí a jazyků</li>
+          <li>Mobilní aplikace bez tisku a logistiky</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</main>
+<div class="tip" id="tip"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+const nf = new Intl.NumberFormat('cs-CZ');
+const fmt = (n) => nf.format(Math.round(n));
+const kc = (n) => fmt(n) + ' Kč';
+const DAYS = ['Ne', 'Po', 'Út', 'St', 'Čt', 'Pá', 'So'];
+const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const dayDiff = (a, b) => Math.round((Date.parse(b) - Date.parse(a)) / 864e5);
+const relTime = (t) => t ? new Date(t).toLocaleString('cs-CZ', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+
+let S = null;
+let editingGoals = false;
+let jobType = 'video';
+const openLogs = new Set();
+
+function toast(t){ const el = $('toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('show'), 2000); }
+async function api(url, body){
+  const r = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body || {}) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok){ toast(j.error || 'Chyba'); throw new Error(j.error); }
+  return j;
+}
+
+// ---------- derived metrics ----------
+function latestSnap(){ const s = S.stats.snapshots; return s.length ? s[s.length - 1] : null; }
+function lastFollowers(){ const s = [...S.stats.snapshots].reverse().find((x) => x.followers != null); return s ? s.followers : null; }
+function totalViews(){ const s = [...S.stats.snapshots].reverse().find((x) => x.videos.length); return s ? s.videos.reduce((a, v) => a + v.views, 0) : null; }
+function postedCount(){ return S.videos.filter((v) => v.posted).length; }
+function metric(g){
+  if (g.metric === 'emails') return S.signups.count;
+  if (g.metric === 'followers') return lastFollowers() ?? 0;
+  if (g.metric === 'posted') return postedCount();
+  if (g.metric === 'views') return totalViews() ?? 0;
+  return g.value || 0;
+}
+
+// ---------- PŘEHLED ----------
+function renderOverview(){
+  const f = lastFollowers(), v = totalViews();
+  const tiles = [
+    ['Zájemci (e-maily)', S.signups.loading && !S.signups.fetchedAt ? '…' : fmt(S.signups.count), S.signups.error ? '⚠ ' + S.signups.error : 'každý má slevu 10 %'],
+    ['Sledující na TikToku', f == null ? '—' : fmt(f), f == null ? 'načti v Statistikách' : 'měřeno ' + relTime([...S.stats.snapshots].reverse().find((x) => x.followers != null).at)],
+    ['Zhlédnutí celkem', v == null ? '—' : fmt(v), v == null ? 'zatím bez dat' : 'všechna videa'],
+    ['Videa', `${postedCount()} / ${S.videos.length}`, 'zveřejněno / hotovo'],
+  ];
+  $('kpis').innerHTML = tiles.map(([l, val, h]) => `<div class="panel tile"><div class="lbl">${esc(l)}</div><div class="val num">${esc(val)}</div><div class="hint">${esc(h)}</div></div>`).join('');
+
+  const today = iso(new Date());
+  if (!editingGoals) $('goals').innerHTML = S.goals.map((g) => {
+    const cur = metric(g), pct = Math.min(100, cur / g.target * 100);
+    const left = g.deadline ? dayDiff(today, g.deadline) : null;
+    let pace = '';
+    if (cur >= g.target) pace = '<span class="badge ok">✓ splněno</span>';
+    else if (left != null && left > 0) pace = `Zbývá <b>${fmt(g.target - cur)}</b> za ${left} dní → <b>${fmt(Math.ceil((g.target - cur) / left))}/den</b>`;
+    else if (left != null) pace = '<span class="badge err">⚠ termín prošel</span>';
+    return `<div class="goal"><div class="spread"><b>${esc(g.label)}</b><span class="num">${fmt(cur)} / ${fmt(g.target)}</span></div>
+      <div class="progress" role="progressbar" aria-valuenow="${Math.round(pct)}" aria-valuemin="0" aria-valuemax="100"><i style="width:${pct}%"></i></div>
+      <div class="spread pace"><span>${pace}</span><span>${g.deadline ? 'do ' + new Date(g.deadline).toLocaleDateString('cs-CZ') : ''}</span></div></div>`;
+  }).join('');
+
+  const next = Object.entries(S.plan.schedule).filter(([d]) => d >= today).sort().slice(0, 4);
+  $('nextPosts').innerHTML = next.length ? next.map(([d, name]) => {
+    const vid = S.videos.find((x) => x.name === name);
+    const slot = S.plan.slots.find((s) => s.dow === new Date(d).getDay());
+    return `<div class="spread" style="padding:6px 0;border-bottom:1px solid var(--grid)"><span><b>${d === today ? 'Dnes' : DAYS[new Date(d).getDay()] + ' ' + new Date(d).toLocaleDateString('cs-CZ')}</b> ${slot ? slot.time : ''}</span><span class="sub">${esc(vid ? vid.title : name)}${vid?.posted ? ' · ✓' : ''}</span></div>`;
+  }).join('') : '<div class="sub">Nic naplánováno — v záložce Plán klikni na „Rozvrhnout hotová videa“.</div>';
+
+  let lastWeek = '';
+  $('checklist').innerHTML = S.checklist.map((c) => {
+    const wk = c.week !== lastWeek ? `<div class="week">${esc(c.week)}</div>` : '';
+    lastWeek = c.week;
+    return `${wk}<label class="check ${c.done ? 'done' : ''}"><input type="checkbox" data-check="${c.id}" ${c.done ? 'checked' : ''}><span>${esc(c.text)}</span></label>`;
+  }).join('');
+}
+
+// ---------- TVORBA ----------
+const CHIPS = {
+  video: ['Video s nejbrutálnější kartou', 'Karta o bývalé/bývalém', 'POV: když padne karta na tebe', '3 videa, každé jiný formát'],
+  free: ['Naplánuj postování na příští týden', 'Napiš 10 nových otázek na karty', 'Vyhodnoť, co funguje a co točit dál', 'Navrhni early bird kampaň'],
+};
+function renderChips(){
+  $('chips').innerHTML = CHIPS[jobType].map((c) => `<button class="chip">${esc(c)}</button>`).join('');
+  $('countWrap').style.display = jobType === 'video' ? '' : 'none';
+  $('prompt').placeholder = jobType === 'video' ? 'Např. „video s kartou o bývalé“, nebo nech prázdné a AI vybere kartu sama.' : 'Co má manažer udělat? Např. „naplánuj videa na příští týden a nastav cíle“.';
+}
+const STATUS_BADGE = { 'čeká': '', 'běží': 'pink', 'hotovo': 'ok', 'chyba': 'err', 'zrušeno': 'warn' };
+const TYPE_LABEL = { video: 'Video', stats: 'Statistiky', free: 'Úkol' };
+function renderJobs(){
+  const box = $('jobs');
+  const scroll = {};
+  box.querySelectorAll('.log').forEach((l) => { scroll[l.dataset.id] = l.scrollHeight - l.scrollTop - l.clientHeight < 30; });
+  const focused = document.activeElement?.dataset?.fu;
+  const draft = focused ? document.activeElement.value : null;
+  if (!S.jobs.length){ box.innerHTML = '<div class="empty">Zatím žádné úkoly. Zadej první nahoře.</div>'; return; }
+  box.innerHTML = S.jobs.map((j) => {
+    const open = j.status === 'běží' || openLogs.has(j.id);
+    const log = open ? `<div class="log" data-id="${j.id}">${j.events.map((e) => `<div class="${e.kind}">${e.kind === 'tool' ? '⚙ ' : e.kind === 'user' ? '→ ' : ''}${esc(e.text)}${e.n > 1 ? ` ×${e.n}` : ''}</div>`).join('')}</div>` : '';
+    const done = ['hotovo', 'chyba', 'zrušeno'].includes(j.status);
+    return `<div class="job">
+      <div class="spread"><span class="row"><span class="badge ${STATUS_BADGE[j.status]}">${esc(j.status)}</span><span class="badge">${TYPE_LABEL[j.type || 'video']}</span><span class="sub">#${j.id} · ${relTime(j.created)}</span></span>
+      <span class="row">${j.status === 'běží' || j.status === 'čeká' ? `<button class="btn ghost sm" data-job="cancel" data-id="${j.id}">Zrušit</button>` : ''}
+      ${done ? `<button class="btn ghost sm" data-job="toggle" data-id="${j.id}">${open ? 'Skrýt průběh' : 'Průběh'}</button><button class="btn ghost sm" data-job="delete" data-id="${j.id}">Smazat</button>` : ''}</span></div>
+      <div class="prompt mt">${esc(j.prompt || 'AI vybere kartu sama')}</div>
+      ${log}
+      ${j.result && done ? `<div class="result">${esc(j.result)}</div>` : ''}
+      ${done && j.sessionId ? `<div class="followup"><input type="text" data-fu="${j.id}" placeholder="Pokračovat: např. „udělej to znovu, ale vtipnější“"><button class="btn sec sm" data-job="followup" data-id="${j.id}">Poslat</button></div>` : ''}
+    </div>`;
+  }).join('');
+  box.querySelectorAll('.log').forEach((l) => { if (scroll[l.dataset.id] !== false) l.scrollTop = l.scrollHeight; });
+  if (focused){ const el = box.querySelector(`[data-fu="${focused}"]`); if (el){ el.value = draft; el.focus(); } }
+}
+const renderedVideos = new Map();
+function videoCard(v){
+  return `<video src="/video/${encodeURIComponent(v.name)}" controls playsinline preload="metadata"></video>
+    <div class="body"><div class="spread"><span class="t">${esc(v.title)}</span>${v.posted ? '<span class="badge ok">✓ venku</span>' : ''}</div>
+    ${v.caption ? `<div class="cap">${esc(v.caption)}</div>` : ''}
+    <div class="row">${v.caption ? `<button class="btn sec sm" data-v="copy" data-name="${esc(v.name)}">Kopírovat popisek</button>` : ''}
+    <a class="btn sec sm" href="/video/${encodeURIComponent(v.name)}" download style="text-decoration:none">Stáhnout</a>
+    <button class="btn ${v.posted ? 'ghost' : ''} sm" data-v="posted" data-name="${esc(v.name)}">${v.posted ? 'Vrátit' : 'Zveřejněno'}</button></div></div>`;
+}
+function renderVideos(){
+  $('vcount').textContent = `${S.videos.length} videí`;
+  const grid = $('videos');
+  if (!S.videos.length){ grid.innerHTML = '<div class="empty">Zatím žádná videa.</div>'; renderedVideos.clear(); return; }
+  grid.querySelector('.empty')?.remove();
+  const keep = new Set();
+  S.videos.forEach((v, i) => {
+    const key = JSON.stringify(v);
+    let r = renderedVideos.get(v.name);
+    // Rebuild only changed cards so polling never interrupts a playing video.
+    if (!r || r.key !== key){ const el = r?.el || document.createElement('div'); el.className = 'vid'; el.innerHTML = videoCard(v); r = { key, el }; renderedVideos.set(v.name, r); }
+    if (grid.children[i] !== r.el) grid.insertBefore(r.el, grid.children[i] || null);
+    keep.add(v.name);
+  });
+  for (const [n, r] of renderedVideos) if (!keep.has(n)){ r.el.remove(); renderedVideos.delete(n); }
+}
+
+// ---------- PLÁN ----------
+function renderSlots(){
+  const order = [1, 2, 3, 4, 5, 6, 0];
+  $('slots').innerHTML = order.map((dow) => {
+    const s = S.plan.slots.find((x) => x.dow === dow);
+    return `<div class="slot ${s.on ? '' : 'off'}"><label class="row" style="justify-content:center"><input type="checkbox" data-slot="${dow}" ${s.on ? 'checked' : ''} style="accent-color:var(--pink)"> <b>${DAYS[dow]}</b></label><input type="time" data-slottime="${dow}" value="${s.time}"></div>`;
+  }).join('');
+}
+let calKey = '';
+function renderCal(){
+  const key = JSON.stringify([S.plan, S.videos.map((v) => [v.name, v.posted])]);
+  if (key === calKey) return;
+  calKey = key;
+  const today = new Date();
+  const planned = new Set(Object.values(S.plan.schedule));
+  let html = '';
+  for (let i = 0; i < 14; i++){
+    const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() + i);
+    const k = iso(d), slot = S.plan.slots.find((s) => s.dow === d.getDay());
+    const name = S.plan.schedule[k];
+    const vid = S.videos.find((v) => v.name === name);
+    const opts = S.videos.filter((v) => !v.posted && (!planned.has(v.name) || v.name === name));
+    html += `<div class="day ${i === 0 ? 'today' : ''} ${slot.on ? '' : 'off'}">
+      <div class="spread"><span class="d">${i === 0 ? 'Dnes' : DAYS[d.getDay()]} ${d.getDate()}. ${d.getMonth() + 1}.</span><span class="sub">${slot.on ? slot.time : 'volno'}</span></div>
+      ${vid ? `<video src="/video/${encodeURIComponent(vid.name)}" preload="metadata" muted playsinline></video><div class="sub">${esc(vid.title)}</div>` : ''}
+      <select data-day="${k}"><option value="">${vid ? '— odebrat —' : '+ vybrat video'}</option>${opts.map((v) => `<option value="${esc(v.name)}" ${v.name === name ? 'selected' : ''}>${esc(v.title)}</option>`).join('')}</select>
+      ${vid && !vid.posted ? `<button class="btn sm" data-v="posted" data-name="${esc(vid.name)}">Zveřejněno</button>` : ''}
+      ${vid?.posted ? '<span class="badge ok">✓ zveřejněno</span>' : ''}
+    </div>`;
+  }
+  $('cal').innerHTML = html;
+}
+
+// ---------- charts (inline SVG, single series → no legend; hover tooltip on every mark) ----------
+const tip = $('tip');
+function showTip(e, value, label){ tip.innerHTML = `<b>${esc(value)}</b>${esc(label)}`; tip.style.opacity = 1; tip.style.left = Math.min(e.clientX + 12, innerWidth - tip.offsetWidth - 8) + 'px'; tip.style.top = (e.clientY - 44) + 'px'; }
+function hideTip(){ tip.style.opacity = 0; }
+function niceMax(v){ if (v <= 4) return 4; const p = 10 ** Math.floor(Math.log10(v)); return Math.ceil(v / p) * p; }
+
+function barChart(el, data, { height = 200, valueLabel = (v) => fmt(v), every = 1 } = {}){
+  if (!data.length || data.every((d) => !d.value)) { el.innerHTML = '<div class="empty">Zatím žádná data.</div>'; return; }
+  const W = Math.max(320, el.clientWidth || 600), H = height, L = 36, B = 22, T = 8;
+  const max = niceMax(Math.max(...data.map((d) => d.value)));
+  const bw = (W - L) / data.length, gap = Math.max(2, bw * 0.25);
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img">`;
+  for (let i = 0; i <= 4; i++){ const y = T + (H - T - B) * (1 - i / 4); s += `<line class="gl" x1="${L}" x2="${W}" y1="${y}" y2="${y}"/><text class="ax num" x="${L - 6}" y="${y + 4}" text-anchor="end">${fmt(max * i / 4)}</text>`; }
+  data.forEach((d, i) => {
+    const h = (H - T - B) * d.value / max, x = L + i * bw + gap / 2, y = H - B - h, w = bw - gap;
+    const r = Math.min(4, w / 2, h);
+    // 4px rounded data-end, square at the baseline
+    if (h > 0) s += `<path class="bar" data-i="${i}" d="M${x},${H - B} V${y + r} Q${x},${y} ${x + r},${y} H${x + w - r} Q${x + w},${y} ${x + w},${y + r} V${H - B} Z"/>`;
+    s += `<rect class="hit" data-i="${i}" x="${L + i * bw}" y="${T}" width="${bw}" height="${H - T - B}" tabindex="0"/>`;
+    if (i % every === 0) s += `<text class="ax" x="${x + w / 2}" y="${H - 6}" text-anchor="middle">${esc(d.short ?? d.label)}</text>`;
+  });
+  el.innerHTML = s + '</svg>';
+  el.querySelectorAll('.hit').forEach((h) => {
+    const i = +h.dataset.i, bar = el.querySelector(`.bar[data-i="${i}"]`);
+    const on = (e) => { bar?.classList.add('hover'); const rc = h.getBoundingClientRect(); showTip(e.clientX ? e : { clientX: rc.x + rc.width / 2, clientY: rc.y + 40 }, valueLabel(data[i].value), data[i].label); };
+    h.addEventListener('pointermove', on); h.addEventListener('focus', on);
+    h.addEventListener('pointerleave', () => { bar?.classList.remove('hover'); hideTip(); }); h.addEventListener('blur', () => { bar?.classList.remove('hover'); hideTip(); });
+  });
+}
+
+function hbarChart(el, data){
+  if (!data.length){ el.innerHTML = '<div class="empty">Zatím žádná data — klikni na „Načíst statistiky z TikToku“.</div>'; return; }
+  const W = Math.max(320, el.clientWidth || 600), rowH = 26, L = Math.min(260, W * 0.4), R = 64, H = data.length * rowH + 4;
+  const max = Math.max(...data.map((d) => d.value)) || 1;
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img">`;
+  data.forEach((d, i) => {
+    const y = i * rowH + 4, w = Math.max(2, (W - L - R) * d.value / max), h = rowH - 8;
+    const label = d.label.length > 34 ? d.label.slice(0, 33) + '…' : d.label;
+    s += `<text class="ax" x="${L - 8}" y="${y + h / 2 + 4}" text-anchor="end" style="fill:var(--ink-dim);font-size:12px">${esc(label)}</text>`;
+    s += `<path class="bar" data-i="${i}" d="M${L},${y} H${L + w - 4} Q${L + w},${y} ${L + w},${y + 4} V${y + h - 4} Q${L + w},${y + h} ${L + w - 4},${y + h} H${L} Z"/>`;
+    s += `<text class="ax num" x="${L + w + 6}" y="${y + h / 2 + 4}" style="fill:var(--ink)">${fmt(d.value)}</text>`;
+    s += `<rect class="hit" data-i="${i}" x="0" y="${y - 2}" width="${W}" height="${rowH}" tabindex="0"/>`;
+  });
+  el.innerHTML = s + '</svg>';
+  el.querySelectorAll('.hit').forEach((h) => {
+    const i = +h.dataset.i, bar = el.querySelector(`.bar[data-i="${i}"]`), d = data[i];
+    const on = (e) => { bar.classList.add('hover'); const rc = h.getBoundingClientRect(); showTip(e.clientX ? e : { clientX: rc.x + 200, clientY: rc.y + 30 }, fmt(d.value) + ' zhlédnutí', d.detail); };
+    h.addEventListener('pointermove', on); h.addEventListener('focus', on);
+    h.addEventListener('pointerleave', () => { bar.classList.remove('hover'); hideTip(); }); h.addEventListener('blur', () => { bar.classList.remove('hover'); hideTip(); });
+  });
+}
+
+function lineChart(el, pts){
+  if (pts.length < 2){ el.innerHTML = `<div class="empty">${pts.length ? `Zatím jedno měření: ${fmt(pts[0].value)} sledujících. Křivka se ukáže po dalším.` : 'Zatím žádná data.'}</div>`; return; }
+  const W = Math.max(320, el.clientWidth || 600), H = 200, L = 44, B = 22, T = 10, R = 10;
+  const t0 = Date.parse(pts[0].at), t1 = Date.parse(pts.at(-1).at) || t0 + 1;
+  const max = niceMax(Math.max(...pts.map((p) => p.value)));
+  const X = (t) => L + (W - L - R) * (Date.parse(t) - t0) / (t1 - t0 || 1), Y = (v) => T + (H - T - B) * (1 - v / max);
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img">`;
+  for (let i = 0; i <= 4; i++){ const y = Y(max * i / 4); s += `<line class="gl" x1="${L}" x2="${W - R}" y1="${y}" y2="${y}"/><text class="ax num" x="${L - 6}" y="${y + 4}" text-anchor="end">${fmt(max * i / 4)}</text>`; }
+  const tl = (t) => (t1 - t0 < 2 * 864e5 ? relTime(t) : new Date(t).toLocaleDateString('cs-CZ'));
+  s += `<text class="ax" x="${L}" y="${H - 6}">${tl(t0)}</text><text class="ax" x="${W - R}" y="${H - 6}" text-anchor="end">${tl(t1)}</text>`;
+  s += `<polyline fill="none" stroke="var(--pink)" stroke-width="2" stroke-linejoin="round" points="${pts.map((p) => `${X(p.at)},${Y(p.value)}`).join(' ')}"/>`;
+  const last = pts.at(-1);
+  s += `<circle cx="${X(last.at)}" cy="${Y(last.value)}" r="4" fill="var(--pink)" stroke="var(--panel)" stroke-width="2"/>`;
+  s += `<line id="xh" class="gl" x1="0" x2="0" y1="${T}" y2="${H - B}" style="stroke:var(--ink-faint);opacity:0"/><circle id="xd" r="4" fill="var(--pink)" stroke="var(--panel)" stroke-width="2" style="opacity:0"/>`;
+  s += `<rect class="hit" x="${L}" y="${T}" width="${W - L - R}" height="${H - T - B}"/>`;
+  el.innerHTML = s + '</svg>';
+  const svg = el.querySelector('svg'), xh = el.querySelector('#xh'), xd = el.querySelector('#xd');
+  el.querySelector('.hit').addEventListener('pointermove', (e) => {
+    const r = svg.getBoundingClientRect(), x = (e.clientX - r.left) * W / r.width;
+    const p = pts.reduce((a, b) => Math.abs(X(b.at) - x) < Math.abs(X(a.at) - x) ? b : a);
+    xh.setAttribute('x1', X(p.at)); xh.setAttribute('x2', X(p.at)); xh.style.opacity = 1;
+    xd.setAttribute('cx', X(p.at)); xd.setAttribute('cy', Y(p.value)); xd.style.opacity = 1;
+    showTip(e, fmt(p.value) + ' sledujících', relTime(p.at));
+  });
+  el.querySelector('.hit').addEventListener('pointerleave', () => { xh.style.opacity = 0; xd.style.opacity = 0; hideTip(); });
+}
+
+// ---------- STATISTIKY ----------
+let statsKey = '';
+function renderStats(){
+  const key = JSON.stringify([S.stats, S.signups, $('tab-statistiky').classList.contains('on')]);
+  if (key === statsKey) return;
+  statsKey = key;
+  const snap = [...S.stats.snapshots].reverse().find((x) => x.videos.length);
+  const vids = snap ? snap.videos : [];
+  const views = vids.reduce((a, v) => a + v.views, 0), eng = vids.reduce((a, v) => a + v.likes + v.comments + v.shares, 0);
+  const conv = views ? S.signups.count / views * 100 : null;
+  $('statsWhen').textContent = S.stats.snapshots.length ? `Poslední měření z TikToku: ${relTime(latestSnap().at)}` : 'Z TikToku zatím nic nenačteno.';
+  $('statTiles').innerHTML = [
+    ['Zájemci', fmt(S.signups.count), S.signups.fetchedAt ? 'aktualizováno ' + relTime(S.signups.fetchedAt) : 'načítám…'],
+    ['Zhlédnutí', snap ? fmt(views) : '—', snap ? `${vids.length} videí` : ''],
+    ['Engagement', views ? (eng / views * 100).toFixed(1).replace('.', ',') + ' %' : '—', 'lajky + komentáře + sdílení / zhlédnutí'],
+    ['Konverze na e-mail', conv == null ? '—' : conv.toFixed(2).replace('.', ',') + ' %', 'zájemci / zhlédnutí'],
+  ].map(([l, v, h]) => `<div class="panel tile"><div class="lbl">${l}</div><div class="val num">${esc(v)}</div><div class="hint">${esc(h)}</div></div>`).join('');
+
+  if (!$('tab-statistiky').classList.contains('on')) return; // charts need layout width
+  const days = [];
+  const today = new Date();
+  for (let i = 29; i >= 0; i--){
+    const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() - i);
+    const k = iso(d);
+    days.push({ label: d.toLocaleDateString('cs-CZ'), short: `${d.getDate()}.${d.getMonth() + 1}.`, value: S.signups.rows.filter((r) => iso(new Date(r.at)) === k).length });
+  }
+  barChart($('chSignups'), days, { every: 5, valueLabel: (v) => `${v} ${v === 1 ? 'zájemce' : v >= 2 && v <= 4 ? 'zájemci' : 'zájemců'}` });
+  lineChart($('chFollowers'), S.stats.snapshots.filter((s) => s.followers != null).map((s) => ({ at: s.at, value: s.followers })));
+  hbarChart($('chViews'), [...vids].sort((a, b) => b.views - a.views).map((v) => ({ label: v.title || v.date, value: v.views, detail: `${v.date} · ${fmt(v.likes)} ♥ · ${fmt(v.comments)} komentářů · ${fmt(v.shares)} sdílení` })));
+  $('vtable').innerHTML = vids.length ? `<table><thead><tr><th>Video</th><th>Datum</th><th class="r">Zhlédnutí</th><th class="r">Lajky</th><th class="r">Komentáře</th><th class="r">Sdílení</th><th class="r">Engagement</th></tr></thead><tbody>${
+    [...vids].sort((a, b) => b.views - a.views).map((v) => `<tr><td>${esc(v.title)}</td><td>${esc(v.date)}</td><td class="r num">${fmt(v.views)}</td><td class="r num">${fmt(v.likes)}</td><td class="r num">${fmt(v.comments)}</td><td class="r num">${fmt(v.shares)}</td><td class="r num">${v.views ? ((v.likes + v.comments + v.shares) / v.views * 100).toFixed(1).replace('.', ',') + ' %' : '—'}</td></tr>`).join('')
+  }</tbody></table>` : '<div class="empty">Žádná data.</div>';
+  $('signupList').innerHTML = S.signups.error ? `<div class="sub">⚠ ${esc(S.signups.error)}</div>` : S.signups.rows.length
+    ? `<details><summary>${S.signups.rows.length} e-mailů</summary><table><tbody>${[...S.signups.rows].reverse().map((r) => `<tr><td>${esc(r.email)}</td><td class="r sub">${relTime(r.at)}</td></tr>`).join('')}</tbody></table></details>`
+    : '<div class="sub">Zatím se nikdo nezapsal. Odkaz na web patří do bia na TikToku a do každého popisku.</div>';
+}
+
+// ---------- POTENCIÁL ----------
+const SLIDERS = [
+  ['views', 'Zhlédnutí za měsíc', 1000, 1000000, 1000, (v) => fmt(v)],
+  ['profileCtr', 'Z videa na web', 0.1, 10, 0.1, (v) => v.toFixed(1).replace('.', ',') + ' %'],
+  ['signupRate', 'Z webu zapsaní (e-mail)', 1, 60, 1, (v) => v + ' %'],
+  ['buyRate', 'Ze zapsaných koupí', 1, 60, 1, (v) => v + ' %'],
+  ['price', 'Cena hry', 199, 799, 10, (v) => kc(v)],
+  ['cost', 'Výroba + doprava / ks', 50, 400, 10, (v) => kc(v)],
+];
+const PRESETS = {
+  kons: { views: 20000, profileCtr: 1, signupRate: 15, buyRate: 10 },
+  real: { views: 50000, profileCtr: 2, signupRate: 25, buyRate: 15 },
+  viral: { views: 1000000, profileCtr: 1.5, signupRate: 25, buyRate: 12 },
+};
+let P = null;
+function renderSliders(){
+  $('sliders').innerHTML = SLIDERS.map(([k, l, min, max, step, f]) => `<div class="sl"><label>${l} <b class="num" id="sv-${k}">${f(P[k])}</b></label>
+    <input type="range" min="${min}" max="${max}" step="${step}" value="${P[k]}" data-p="${k}"><input type="number" min="${min}" max="${max}" step="${step}" value="${P[k]}" data-pn="${k}"></div>`).join('');
+}
+function renderFunnel(){
+  const visits = P.views * P.profileCtr / 100, emails = visits * P.signupRate / 100, buyers = emails * P.buyRate / 100;
+  const rows = [['Zhlédnutí', P.views], ['Návštěvy webu', visits], ['E-maily', emails], ['Prodané hry', buyers]];
+  $('funnel').innerHTML = rows.map(([l, v]) => `<div class="f"><span>${l}</span><div class="track"><i style="width:${Math.max(0.6, Math.log10(v + 1) / Math.log10(P.views + 1) * 100)}%"></i></div><b class="num" style="text-align:right">${fmt(v)}</b></div>`).join('')
+    + '<div class="sub">Délka pruhů je v logaritmickém měřítku, jinak by spodní kroky nebyly vidět.</div>';
+  const rev = buyers * P.price, prof = buyers * (P.price - P.cost);
+  $('revM').textContent = kc(rev); $('profM').textContent = kc(prof); $('revY').textContent = kc(rev * 12); $('profY').textContent = kc(prof * 12);
+  SLIDERS.forEach(([k, , , , , f]) => { const el = $('sv-' + k); if (el) el.textContent = f(P[k]); });
+  const v = totalViews();
+  $('realConv').innerHTML = v ? `Tvoje skutečnost zatím: <b>${fmt(v)}</b> zhlédnutí → <b>${fmt(S.signups.count)}</b> e-mailů, tedy ${(S.signups.count / v * 100).toFixed(2).replace('.', ',')} % ze zhlédnutí na e-mail. V kalkulačce teď počítáš s ${(P.profileCtr * P.signupRate / 100).toFixed(2).replace('.', ',')} %.`
+    : 'Až načteš statistiky z TikToku, uvidíš tu srovnání kalkulačky se skutečnou konverzí.';
+}
+let saveP;
+function setP(k, v){ P[k] = +v; renderFunnel(); clearTimeout(saveP); saveP = setTimeout(() => api('/api/potential', P).catch(() => {}), 500); }
+
+// ---------- live status ----------
+function renderLive(){
+  const run = S.jobs.find((j) => j.status === 'běží'), wait = S.jobs.filter((j) => j.status === 'čeká').length;
+  $('liveDot').className = 'dot' + (run ? ' run' : '');
+  const last = run?.events.filter((e) => e.kind === 'tool' || e.kind === 'info').at(-1);
+  $('liveText').textContent = run ? `AI pracuje: ${last ? last.text : '…'}${wait ? ` · ve frontě ${wait}` : ''}` : wait ? `Ve frontě ${wait}` : 'AI nečinná';
+}
+
+// ---------- refresh ----------
+async function refresh(){
+  try { S = await (await fetch('/api/state')).json(); } catch { $('liveText').textContent = 'Dashboard neodpovídá'; return; }
+  if (!P){ P = { ...S.potential }; renderSliders(); }
+  renderLive(); renderOverview(); renderJobs(); renderVideos(); renderStats(); renderFunnel();
+  if (!document.activeElement?.closest?.('#slots')) renderSlots();
+  if (!document.activeElement?.closest?.('#cal')) renderCal();
+}
+
+// ---------- events ----------
+$('nav').addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  document.querySelectorAll('#nav button').forEach((x) => x.classList.toggle('on', x === b));
+  document.querySelectorAll('section.tab').forEach((s) => s.classList.toggle('on', s.id === 'tab-' + b.dataset.tab));
+  history.replaceState(null, '', '#' + b.dataset.tab);
+  statsKey = ''; if (S) renderStats();
+});
+$('jobType').addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  jobType = b.dataset.t;
+  $('jobType').querySelectorAll('button').forEach((x) => x.classList.toggle('on', x === b));
+  renderChips();
+});
+$('chips').addEventListener('click', (e) => { if (e.target.classList.contains('chip')){ $('prompt').value = e.target.textContent; $('prompt').focus(); } });
+$('go').addEventListener('click', async () => {
+  const prompt = $('prompt').value.trim();
+  await api('/api/jobs', { type: jobType, prompt, count: $('count').value });
+  $('prompt').value = '';
+  toast(jobType === 'video' ? 'Video je ve frontě' : 'Úkol je ve frontě');
+  refresh();
+});
+$('jobs').addEventListener('click', async (e) => {
+  const b = e.target.closest('[data-job]'); if (!b) return;
+  const id = +b.dataset.id, act = b.dataset.job;
+  if (act === 'toggle'){ openLogs.has(id) ? openLogs.delete(id) : openLogs.add(id); renderJobs(); return; }
+  if (act === 'followup'){ const inp = $('jobs').querySelector(`[data-fu="${id}"]`); await api(`/api/jobs/${id}/followup`, { message: inp.value }); inp.value = ''; }
+  else await api(`/api/jobs/${id}/${act}`);
+  refresh();
+});
+$('jobs').addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target.dataset.fu) e.target.nextElementSibling.click(); });
+document.addEventListener('click', async (e) => {
+  const b = e.target.closest('[data-v]'); if (!b) return;
+  const v = S.videos.find((x) => x.name === b.dataset.name);
+  if (b.dataset.v === 'copy'){ await navigator.clipboard.writeText(v.caption); return toast('Popisek zkopírován'); }
+  if (b.dataset.v === 'posted'){ await api(`/api/videos/${encodeURIComponent(v.name)}/posted`); refresh(); }
+});
+$('checklist').addEventListener('change', (e) => { const id = e.target.dataset.check; if (id) api('/api/checklist', { id, done: e.target.checked }).then(refresh); });
+$('slots').addEventListener('change', () => {
+  const slots = [0, 1, 2, 3, 4, 5, 6].map((dow) => ({ dow, on: $('slots').querySelector(`[data-slot="${dow}"]`).checked, time: $('slots').querySelector(`[data-slottime="${dow}"]`).value }));
+  api('/api/plan', { slots }).then(() => { document.activeElement.blur(); refresh(); });
+});
+$('cal').addEventListener('change', (e) => { const d = e.target.dataset.day; if (d) api('/api/schedule', { date: d, video: e.target.value || null }).then(() => { e.target.blur(); refresh(); }); });
+$('autoPlan').addEventListener('click', () => api('/api/schedule', { auto: true }).then(() => { toast('Videa rozvržena'); refresh(); }));
+$('planAI').addEventListener('click', () => api('/api/jobs', { type: 'free', prompt: 'Naplánuj zveřejňování hotových videí na příštích 14 dní podle nastavených časů (POST /api/schedule). Nejsilnější videa dej na pátek a sobotu, střídej formáty. Když je videí málo, napiš, kolik jich ještě vyrobit.' }).then(() => { toast('AI plánuje — průběh v Tvorbě'); refresh(); }));
+$('statsAI').addEventListener('click', () => api('/api/jobs', { type: 'stats' }).then(() => { toast('AI načítá statistiky z TikToku'); refresh(); }));
+$('refreshSignups').addEventListener('click', async (e) => { e.target.disabled = true; await api('/api/signups/refresh'); e.target.disabled = false; toast('Zájemci obnoveni'); refresh(); });
+$('saveFollowers').addEventListener('click', async () => {
+  const v = +$('manFollowers').value; if (!v && v !== 0) return toast('Zadej číslo');
+  await api('/api/stats', { followers: v, videos: [], source: 'ručně' }); $('manFollowers').value = ''; toast('Uloženo'); refresh();
+});
+$('editGoals').addEventListener('click', () => {
+  editingGoals = true;
+  const box = $('goals');
+  box.innerHTML = S.goals.map((g, i) => `<div class="goal row" data-g="${i}"><input type="text" value="${esc(g.label)}" data-k="label" style="flex:1;min-width:140px">
+    <input type="number" value="${g.target}" data-k="target" style="width:100px" title="Cíl">${g.metric === 'manual' ? `<input type="number" value="${g.value || 0}" data-k="value" style="width:90px" title="Aktuálně">` : ''}
+    <input type="date" value="${g.deadline}" data-k="deadline"></div>`).join('') + '<div class="row mt"><button class="btn sm" id="saveGoals">Uložit cíle</button><button class="btn ghost sm" id="cancelGoals">Zrušit</button></div>';
+  $('saveGoals').onclick = async () => {
+    const goals = S.goals.map((g, i) => { const row = box.querySelector(`[data-g="${i}"]`); const o = { ...g }; row.querySelectorAll('[data-k]').forEach((inp) => { o[inp.dataset.k] = inp.value; }); return o; });
+    await api('/api/goals', { goals }); editingGoals = false; toast('Cíle uloženy'); refresh();
+  };
+  $('cancelGoals').onclick = () => { editingGoals = false; renderOverview(); };
+});
+$('sliders').addEventListener('input', (e) => {
+  const k = e.target.dataset.p || e.target.dataset.pn; if (!k) return;
+  const other = $('sliders').querySelector(e.target.dataset.p ? `[data-pn="${k}"]` : `[data-p="${k}"]`); other.value = e.target.value;
+  setP(k, e.target.value);
+});
+$('presets').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; Object.assign(P, PRESETS[b.dataset.p]); renderSliders(); setP('views', P.views); });
+addEventListener('resize', () => { statsKey = ''; if (S) renderStats(); });
+
+const initial = location.hash.slice(1);
+if (initial) document.querySelector(`#nav [data-tab="${initial}"]`)?.click();
+renderChips();
+refresh();
+setInterval(refresh, 2500);
+</script>
+</body>
+</html>
