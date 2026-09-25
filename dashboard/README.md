@@ -6,9 +6,10 @@ Lokální webový dashboard pro marketing Crazy Night: `npm run dashboard` → h
 - **Tvorba:** zadáš video nebo volný úkol a dashboard spustí Claude Code (`claude -p --chrome`)
   se skillem `crazynight-video`. Průběh vidíš živě, na hotový úkol můžeš navázat další zprávou.
   Hotová videa z `~/Downloads/crazy_night_videa` jsou v galerii.
-- **Plán:** časy postování po dnech a kalendář na 14 dní (ručně, automaticky, nebo přes AI).
-- **Statistiky:** zájemci z Vercel Blob (`npm run zajemci`) a čísla z TikToku, která načte Claude
-  z TikTok Studia. Sledující jdou zapsat i ručně.
+- **Plán:** 2 posty denně (TikTok + Instagram Reels), časy po dnech a kalendář na 14 dní (ručně, automaticky, nebo přes AI).
+  U každého videa se zveřejnění odškrtává zvlášť pro TikTok a Instagram.
+- **Statistiky:** zájemci z Vercel Blob (`npm run zajemci`) a čísla z TikToku a Instagramu, která načte Claude
+  z TikTok Studia a Instagramu. Sledující jdou zapsat i ručně.
 - **Potenciál:** kalkulačka zhlédnutí → web → e-maily → prodeje → obrat, spolu s rámcem z plánu projektu.
 
 Úkoly běží postupně za sebou, protože sdílí jeden Chrome. Chrome s rozšířením Claude musí být zapnutý.

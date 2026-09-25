@@ -19,12 +19,17 @@ const DB_FILE = path.join(DATA, 'db.json');
 const DEFAULTS = {
   jobs: [], posted: {}, nextId: 1,
   stats: { snapshots: [] },
-  // Evenings are when Czech TikTok audiences are most active; the user can edit this in the Plan tab.
-  plan: { slots: [1, 2, 3, 4, 5, 6, 0].map((dow) => ({ dow, time: dow === 6 || dow === 0 ? '20:00' : '19:00', on: true })), schedule: {} },
+  // Two posts a day, each cross-posted to TikTok and Instagram Reels: lunch break and evening are the
+  // strongest windows for Czech audiences, weekends run later. Editable in the Plan tab.
+  plan: {
+    slots: [1, 2, 3, 4, 5, 6, 0].map((dow) => ({ dow, times: dow === 6 || dow === 0 ? ['11:00', '20:00'] : ['12:30', '19:00'], on: true })),
+    schedule: {}, // "YYYY-MM-DD#slotIndex" -> video file name
+  },
   goals: [
     { id: 'emails', label: 'E-maily zájemců', metric: 'emails', target: 200, deadline: '2026-10-31' },
     { id: 'followers', label: 'Sledující na TikToku', metric: 'followers', target: 1000, deadline: '2026-10-31' },
-    { id: 'posted', label: 'Zveřejněná videa', metric: 'posted', target: 20, deadline: '2026-10-31' },
+    { id: 'followers_ig', label: 'Sledující na Instagramu', metric: 'followers_ig', target: 500, deadline: '2026-10-31' },
+    { id: 'posted', label: 'Zveřejněná videa (2 denně)', metric: 'posted', target: 70, deadline: '2026-10-31' },
     { id: 'views', label: 'Zhlédnutí celkem', metric: 'views', target: 100000, deadline: '2026-10-31' },
     { id: 'preorders', label: 'Předprodeje (early bird)', metric: 'manual', target: 50, value: 0, deadline: '2026-11-30' },
   ],
@@ -47,6 +52,11 @@ const DEFAULTS = {
 };
 const db = fs.existsSync(DB_FILE) ? JSON.parse(fs.readFileSync(DB_FILE, 'utf8')) : {};
 for (const [k, v] of Object.entries(DEFAULTS)) if (db[k] === undefined) db[k] = structuredClone(v);
+// Older data shapes: one time per day, one platform, day-keyed schedule.
+for (const sl of db.plan.slots) if (!sl.times) { sl.times = [sl.time || '19:00']; delete sl.time; }
+for (const [k, v] of Object.entries(db.posted)) if (typeof v === 'string') db.posted[k] = { tiktok: v };
+for (const k of Object.keys(db.plan.schedule)) if (!k.includes('#')) { db.plan.schedule[k + '#0'] = db.plan.schedule[k]; delete db.plan.schedule[k]; }
+const PLATFORMS = ['tiktok', 'instagram'];
 for (const j of db.jobs) if (j.status === 'běží') { j.status = 'chyba'; j.events.push(ev('error', 'Přerušeno restartem dashboardu.')); }
 function save() {
   fs.writeFileSync(DB_FILE + '.tmp', JSON.stringify(db, null, 1));
@@ -57,21 +67,26 @@ function ev(kind, text) { return { t: new Date().toISOString(), kind, text }; }
 // ---------- Claude Code runner ----------
 const API_HELP = `Dashboard běží na http://localhost:${PORT} a má API (volej přes curl, JSON):
 - GET /api/state — videa, plán, cíle, statistiky, zájemci
-- POST /api/schedule {"date":"YYYY-MM-DD","video":"NN_nazev.mp4" | null} — naplánuje video na den
+- POST /api/schedule {"date":"YYYY-MM-DD","slot":0|1,"video":"NN_nazev.mp4" | null} — naplánuje video do slotu dne
+  (postuje se 2× denně, každé video na TikTok i Instagram Reels; časy slotů jsou v plan.slots[].times)
 - POST /api/goals {"goals":[...]} — přepíše cíle (stejný tvar jako v /api/state)
-- POST /api/stats {"followers":N,"videos":[{"title":"…","date":"YYYY-MM-DD","views":N,"likes":N,"comments":N,"shares":N}]}`;
+- POST /api/stats {"followers":{"tiktok":N,"instagram":N},"videos":[{"platform":"tiktok|instagram","title":"…","date":"YYYY-MM-DD","views":N,"likes":N,"comments":N,"shares":N}]}`;
 
-const STATS_INSTRUCTION = `Aktualizuj statistiky TikTok účtu Crazy Night (@dyos_app) do dashboardu.
-1. V Chrome otevři nový tab https://www.tiktok.com/tiktokstudio/content (uživatel je přihlášený). Když přihlášený není, skonči a napiš to.
-2. Zjisti počet sledujících a pro každé video: popisek (max 60 znaků), datum zveřejnění, zhlédnutí, lajky, komentáře, sdílení.
+const STATS_INSTRUCTION = `Aktualizuj statistiky Crazy Night z TikToku a Instagramu do dashboardu.
+1. TikTok (@dyos_app): v Chrome otevři nový tab https://www.tiktok.com/tiktokstudio/content. Zjisti počet sledujících a pro každé
+   video popisek (max 60 znaků), datum zveřejnění, zhlédnutí, lajky, komentáře, sdílení.
+2. Instagram: otevři https://www.instagram.com/ a přes profil přihlášeného účtu Crazy Night zjisti sledující a u každého reelu
+   totéž (zhlédnutí/přehrání, lajky, komentáře, sdílení — co je vidět v přehledech/insights).
+   Když na některé síti uživatel přihlášený není nebo účet Crazy Night neexistuje, tu síť přeskoč a napiš to v reportu.
 3. Ulož to do JSON souboru ve scratchpadu a pošli: curl -s -X POST http://localhost:${PORT}/api/stats -H 'content-type: application/json' --data-binary @soubor.json
-   Tvar: {"followers":N,"videos":[{"title":"…","date":"YYYY-MM-DD","views":N,"likes":N,"comments":N,"shares":N}]}
-4. Na TikToku nic neměň ani nepostuj. Tab zavři. Na konci napiš 2–3 věty česky: jak si účet vede a co z čísel plyne.`;
+   Tvar: {"followers":{"tiktok":N,"instagram":N},"videos":[{"platform":"tiktok","title":"…","date":"YYYY-MM-DD","views":N,"likes":N,"comments":N,"shares":N}]}
+   (síť, kterou jsi nenačetl, v followers vynech)
+4. Nic neměň, nepostuj, nelajkuj ani nekomentuj. Taby zavři. Na konci napiš 2–3 věty česky: jak si účty vedou a co z čísel plyne.`;
 
-const FREE_INSTRUCTION = (prompt) => `Jsi marketingový manažer párty karetní hry Crazy Night (TikTok @dyos_app, web https://crazynight.vercel.app, zapsaní dostanou 10% slevu).
+const FREE_INSTRUCTION = (prompt) => `Jsi marketingový manažer párty karetní hry Crazy Night (TikTok @dyos_app + Instagram Reels, postuje se 2× denně, web https://crazynight.vercel.app, zapsaní dostanou 10% slevu).
 Repo projektu je v aktuální složce, plán projektu v ~/Downloads/Crazy Night — přehled projektu.pdf.
 ${API_HELP}
-Když úkol znamená vyrobit video, použij skill crazynight-video. Na TikTok nikdy nepostuj.
+Když úkol znamená vyrobit video, použij skill crazynight-video. Na TikTok ani Instagram nikdy nepostuj.
 Běžíš bez obsluhy z webového dashboardu: na nic se neptej, rozhoduj sám. Na konci napiš krátký report česky.
 
 Úkol: ${prompt}`;
@@ -247,16 +262,21 @@ function signupsPublic() {
 
 // ---------- posting plan ----------
 const isoDate = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-// Fills the next 14 days' active slots with finished videos that are neither posted nor already scheduled.
+// Fills the next 14 days' free slots (skipping today's already-passed times) with finished videos that
+// are neither posted nor scheduled yet, oldest first.
 function autoSchedule() {
   const planned = new Set(Object.values(db.plan.schedule));
   const queue = listVideos().filter((v) => !v.posted && !planned.has(v.name)).reverse();
-  const today = new Date();
+  const now = new Date();
+  const hhmm = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
   for (let i = 0; i < 14 && queue.length; i++) {
-    const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() + i);
+    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i);
     const slot = db.plan.slots.find((s) => s.dow === d.getDay());
-    const key = isoDate(d);
-    if (slot?.on && !db.plan.schedule[key]) db.plan.schedule[key] = queue.shift().name;
+    if (!slot?.on) continue;
+    slot.times.forEach((t, si) => {
+      const key = `${isoDate(d)}#${si}`;
+      if (queue.length && !db.plan.schedule[key] && !(i === 0 && t <= hhmm)) db.plan.schedule[key] = queue.shift().name;
+    });
   }
 }
 
@@ -289,28 +309,37 @@ http.createServer(async (req, res) => {
     if (req.method === 'POST' && p === '/api/stats') {
       const b = await body(req);
       const videos = (Array.isArray(b.videos) ? b.videos : []).map((v) => ({
+        platform: PLATFORMS.includes(v.platform) ? v.platform : 'tiktok',
         title: String(v.title || '').slice(0, 120), date: String(v.date || '').slice(0, 10),
         views: +v.views || 0, likes: +v.likes || 0, comments: +v.comments || 0, shares: +v.shares || 0,
       }));
-      const snap = { at: new Date().toISOString(), followers: b.followers == null ? null : +b.followers, videos, source: b.source || 'claude' };
+      // followers: number (= TikTok, older shape) or { tiktok, instagram }
+      const f = typeof b.followers === 'object' && b.followers ? b.followers : { tiktok: b.followers };
+      const followers = {};
+      for (const pl of PLATFORMS) if (f[pl] != null && f[pl] !== '' && isFinite(+f[pl])) followers[pl] = +f[pl];
+      const snap = { at: new Date().toISOString(), followers, videos, source: b.source || 'claude' };
       db.stats.snapshots.push(snap);
       db.stats.snapshots = db.stats.snapshots.slice(-200);
       save();
       return json(res, 200, { ok: true, videos: videos.length });
     }
     if (req.method === 'POST' && p === '/api/schedule') {
-      const { date, video, auto } = await body(req);
+      const { date, slot = 0, video, auto } = await body(req);
       if (auto) autoSchedule();
-      else if (/^\d{4}-\d{2}-\d{2}$/.test(date || '')) {
-        if (video) db.plan.schedule[date] = path.basename(video); else delete db.plan.schedule[date];
-      } else return json(res, 400, { error: 'Chybí datum.' });
+      else if (/^\d{4}-\d{2}-\d{2}$/.test(date || '') && [0, 1, 2].includes(+slot)) {
+        const key = `${date}#${+slot}`;
+        if (video) db.plan.schedule[key] = path.basename(video); else delete db.plan.schedule[key];
+      } else return json(res, 400, { error: 'Chybí datum nebo slot.' });
       save();
       return json(res, 200, { ok: true });
     }
     if (req.method === 'POST' && p === '/api/plan') {
       const { slots } = await body(req);
       if (!Array.isArray(slots) || slots.length !== 7) return json(res, 400, { error: 'Čekám 7 slotů.' });
-      db.plan.slots = slots.map((s) => ({ dow: +s.dow, time: /^\d{2}:\d{2}$/.test(s.time) ? s.time : '19:00', on: !!s.on }));
+      db.plan.slots = slots.map((s) => {
+        const times = (Array.isArray(s.times) ? s.times : []).filter((t) => /^\d{2}:\d{2}$/.test(t)).slice(0, 3).sort();
+        return { dow: +s.dow, times: times.length ? times : ['19:00'], on: !!s.on };
+      });
       save();
       return json(res, 200, { ok: true });
     }
@@ -319,7 +348,7 @@ http.createServer(async (req, res) => {
       if (!Array.isArray(goals)) return json(res, 400, { error: 'Čekám pole cílů.' });
       db.goals = goals.map((g, i) => ({
         id: String(g.id || 'g' + i), label: String(g.label || 'Cíl').slice(0, 60),
-        metric: ['emails', 'followers', 'posted', 'views', 'manual'].includes(g.metric) ? g.metric : 'manual',
+        metric: ['emails', 'followers', 'followers_ig', 'posted', 'views', 'manual'].includes(g.metric) ? g.metric : 'manual',
         target: Math.max(1, +g.target || 1), value: +g.value || 0, deadline: String(g.deadline || '').slice(0, 10),
       }));
       save();
@@ -381,7 +410,11 @@ http.createServer(async (req, res) => {
     m = /^\/api\/videos\/(.+)\/posted$/.exec(p);
     if (req.method === 'POST' && m) {
       const name = path.basename(decodeURIComponent(m[1]));
-      if (db.posted[name]) delete db.posted[name]; else db.posted[name] = new Date().toISOString();
+      const { platform } = await body(req);
+      if (!PLATFORMS.includes(platform)) return json(res, 400, { error: 'Neznámá síť.' });
+      const cur = db.posted[name] || {};
+      if (cur[platform]) delete cur[platform]; else cur[platform] = new Date().toISOString();
+      if (Object.keys(cur).length) db.posted[name] = cur; else delete db.posted[name];
       save();
       return json(res, 200, { ok: true });
     }

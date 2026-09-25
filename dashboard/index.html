@@ -109,13 +109,24 @@
   .slots{ display:grid; grid-template-columns:repeat(7, 1fr); gap:8px; }
   .slot{ background:var(--panel-2); border:1px solid var(--line); border-radius:12px; padding:10px; text-align:center; font-size:13px; }
   .slot.off{ opacity:.45; }
-  .slot input[type=time]{ width:100%; margin-top:6px; padding:4px 6px; }
+  .slot input[type=time]{ width:100%; padding:4px 6px; }
   .cal{ display:grid; grid-template-columns:repeat(7, 1fr); gap:10px; }
-  .day{ background:var(--panel-2); border:1px solid var(--line); border-radius:12px; padding:10px; min-height:150px; display:flex; flex-direction:column; gap:6px; font-size:13px; min-width:0; }
+  .day{ background:var(--panel-2); border:1px solid var(--line); border-radius:12px; padding:10px; min-height:120px; display:flex; flex-direction:column; gap:6px; font-size:13px; min-width:0; }
   .day.today{ border-color:var(--pink); }
   .day.off{ opacity:.5; }
   .day .d{ font-weight:800; }
-  .day video{ width:100%; aspect-ratio:9/16; max-height:150px; object-fit:cover; border-radius:8px; background:#000; }
+  .srow{ display:grid; grid-template-columns:44px 1fr; gap:8px; align-items:start; padding-top:8px; border-top:1px solid var(--line); }
+  .srow:first-of-type{ border-top:0; padding-top:0; }
+  .srow video, .srow .ph{ width:44px; height:78px; object-fit:cover; border-radius:6px; background:#000; display:block; }
+  .srow .ph{ background:var(--panel); border:1px dashed var(--line); }
+  .srow .tm{ font-weight:800; font-size:12.5px; }
+  .srow select{ margin:4px 0; }
+  .pl{ display:flex; gap:4px; }
+  .pbtn{ flex:1; background:var(--panel); border:1px solid var(--line); border-radius:7px; padding:3px 0; font-size:11.5px; font-weight:700; color:var(--ink-dim); }
+  .pbtn.on{ background:var(--ok); border-color:var(--ok); color:#0B0B0F; }
+  .pbtn:hover{ border-color:var(--pink); }
+  .warnbox{ background:#2A2112; border:1px solid var(--warn); border-radius:12px; padding:10px 12px; font-size:13.5px; margin-bottom:12px; }
+  .slot .times{ display:flex; flex-direction:column; gap:4px; margin-top:6px; }
   .day select{ width:100%; font-size:12px; padding:5px; }
 
   /* charts */
@@ -201,11 +212,11 @@
       <div class="spread mt">
         <div class="chips" id="chips"></div>
         <div class="row">
-          <label class="sub" id="countWrap">Počet videí <select id="count"><option>1</option><option>2</option><option>3</option></select></label>
+          <label class="sub" id="countWrap">Počet videí <select id="count"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></label>
           <button class="btn" id="go">Spustit</button>
         </div>
       </div>
-      <p class="sub mt">AI běží v Claude Code a video generuje v Gemini v tvém Chrome. Nech Chrome zapnutý. Jedno video trvá zhruba 5–10 minut, úkoly jedou postupně za sebou.</p>
+      <p class="sub mt">AI běží v Claude Code a video generuje v Gemini v tvém Chrome. Nech Chrome zapnutý. Jedno video trvá zhruba 5–10 minut, úkoly jedou postupně za sebou. Při 2 postech denně potřebuješ 14 videí týdně.</p>
     </div>
     <div class="grid g2 mt">
       <div class="panel"><h2>Úkoly</h2><div id="jobs"></div></div>
@@ -216,7 +227,7 @@
   <!-- PLÁN -->
   <section class="tab" id="tab-plan">
     <div class="panel">
-      <div class="spread"><h2>Kdy postovat</h2><span class="sub">Česká TikTok publika jsou nejaktivnější večer 18–21 h, o víkendu později.</span></div>
+      <div class="spread"><h2>Kdy postovat · 2× denně na TikTok i Instagram</h2><span class="sub">Nejsilnější okna: polední pauza a večer 18–21 h, o víkendu později. Druhý čas smaž, když chceš jen 1 post.</span></div>
       <div class="slots" id="slots"></div>
     </div>
     <div class="panel mt">
@@ -234,17 +245,18 @@
       <div><h2>Statistiky</h2><div class="sub" id="statsWhen"></div></div>
       <div class="row">
         <button class="btn sec sm" id="refreshSignups">Obnovit zájemce</button>
-        <button class="btn sm" id="statsAI">Načíst statistiky z TikToku</button>
+        <button class="btn sm" id="statsAI">Načíst z TikToku a Instagramu</button>
       </div>
     </div>
     <div class="grid g4 mt" id="statTiles"></div>
     <div class="grid g2 mt">
       <div class="panel"><h3>Noví zájemci po dnech</h3><div class="sub">posledních 30 dní · z formuláře na webu</div><div class="chart mt" id="chSignups"></div></div>
-      <div class="panel"><h3>Sledující na TikToku</h3><div class="sub">podle uložených měření</div><div class="chart mt" id="chFollowers"></div>
-        <div class="row mt"><input type="number" id="manFollowers" placeholder="Sledující" style="width:130px"><button class="btn sec sm" id="saveFollowers">Zapsat ručně</button></div>
+      <div class="panel"><h3>Sledující</h3><div class="sub">podle uložených měření</div>
+        <div class="grid g2 mt"><div><div class="sub"><b>TikTok</b></div><div class="chart" id="chFollowers"></div></div><div><div class="sub"><b>Instagram</b></div><div class="chart" id="chFollowersIg"></div></div></div>
+        <div class="row mt"><select id="manPlatform"><option value="tiktok">TikTok</option><option value="instagram">Instagram</option></select><input type="number" id="manFollowers" placeholder="Sledující" style="width:120px"><button class="btn sec sm" id="saveFollowers">Zapsat ručně</button></div>
       </div>
     </div>
-    <div class="panel mt"><h3>Zhlédnutí podle videa</h3><div class="sub">poslední měření z TikToku</div><div class="chart mt" id="chViews"></div>
+    <div class="panel mt"><h3>Zhlédnutí podle videa</h3><div class="sub">poslední měření · TT = TikTok, IG = Instagram · top 20</div><div class="chart mt" id="chViews"></div>
       <details><summary>Tabulka videí</summary><div id="vtable"></div></details>
     </div>
     <div class="panel mt"><h3>Zájemci</h3><div id="signupList"></div></div>
@@ -321,12 +333,28 @@ async function api(url, body){
 
 // ---------- derived metrics ----------
 function latestSnap(){ const s = S.stats.snapshots; return s.length ? s[s.length - 1] : null; }
-function lastFollowers(){ const s = [...S.stats.snapshots].reverse().find((x) => x.followers != null); return s ? s.followers : null; }
-function totalViews(){ const s = [...S.stats.snapshots].reverse().find((x) => x.videos.length); return s ? s.videos.reduce((a, v) => a + v.views, 0) : null; }
-function postedCount(){ return S.videos.filter((v) => v.posted).length; }
+const fol = (snap, pl) => snap.followers == null ? null : typeof snap.followers === 'number' ? (pl === 'tiktok' ? snap.followers : null) : snap.followers[pl] ?? null;
+function lastFollowersSnap(pl){ return [...S.stats.snapshots].reverse().find((x) => fol(x, pl) != null) || null; }
+function lastFollowers(pl = 'tiktok'){ const s = lastFollowersSnap(pl); return s ? fol(s, pl) : null; }
+const isPosted = (v) => !!(v.posted && Object.keys(v.posted).length);
+const PL = { tiktok: 'TikTok', instagram: 'Instagram' };
+const PL_SHORT = { tiktok: 'TT', instagram: 'IG' };
+function slotTimes(dateStr){ const sl = S.plan.slots.find((x) => x.dow === new Date(dateStr + 'T12:00').getDay()); return sl?.on ? sl.times : []; }
+// Unposted videos cover this many days at the configured number of posts per day.
+function stock(){ const n = S.videos.filter((v) => !isPosted(v)).length; const perDay = S.plan.slots.reduce((a, x) => a + (x.on ? x.times.length : 0), 0) / 7 || 1; return { n, days: n / perDay, perDay }; }
+function totalViews(){
+  let total = null;
+  for (const pl of ['tiktok', 'instagram']){
+    const sn = [...S.stats.snapshots].reverse().find((x) => x.videos.some((v) => (v.platform || 'tiktok') === pl));
+    if (sn) total = (total || 0) + sn.videos.filter((v) => (v.platform || 'tiktok') === pl).reduce((a, v) => a + v.views, 0);
+  }
+  return total;
+}
+function postedCount(){ return S.videos.filter(isPosted).length; }
 function metric(g){
   if (g.metric === 'emails') return S.signups.count;
-  if (g.metric === 'followers') return lastFollowers() ?? 0;
+  if (g.metric === 'followers') return lastFollowers('tiktok') ?? 0;
+  if (g.metric === 'followers_ig') return lastFollowers('instagram') ?? 0;
   if (g.metric === 'posted') return postedCount();
   if (g.metric === 'views') return totalViews() ?? 0;
   return g.value || 0;
@@ -334,12 +362,12 @@ function metric(g){
 
 // ---------- PŘEHLED ----------
 function renderOverview(){
-  const f = lastFollowers(), v = totalViews();
+  const ft = lastFollowers('tiktok'), fi = lastFollowers('instagram'), v = totalViews(), st = stock();
   const tiles = [
     ['Zájemci (e-maily)', S.signups.loading && !S.signups.fetchedAt ? '…' : fmt(S.signups.count), S.signups.error ? '⚠ ' + S.signups.error : 'každý má slevu 10 %'],
-    ['Sledující na TikToku', f == null ? '—' : fmt(f), f == null ? 'načti v Statistikách' : 'měřeno ' + relTime([...S.stats.snapshots].reverse().find((x) => x.followers != null).at)],
-    ['Zhlédnutí celkem', v == null ? '—' : fmt(v), v == null ? 'zatím bez dat' : 'všechna videa'],
-    ['Videa', `${postedCount()} / ${S.videos.length}`, 'zveřejněno / hotovo'],
+    ['Sledující TikTok · IG', `${ft == null ? '—' : fmt(ft)} · ${fi == null ? '—' : fmt(fi)}`, ft == null && fi == null ? 'načti v Statistikách' : 'poslední měření'],
+    ['Zhlédnutí celkem', v == null ? '—' : fmt(v), v == null ? 'zatím bez dat' : 'TikTok + Instagram'],
+    ['Zásoba videí', `${st.n} ks`, `vystačí na ${st.days.toFixed(1).replace('.', ',')} dne při ${st.perDay.toFixed(0)} postech denně`],
   ];
   $('kpis').innerHTML = tiles.map(([l, val, h]) => `<div class="panel tile"><div class="lbl">${esc(l)}</div><div class="val num">${esc(val)}</div><div class="hint">${esc(h)}</div></div>`).join('');
 
@@ -356,12 +384,16 @@ function renderOverview(){
       <div class="spread pace"><span>${pace}</span><span>${g.deadline ? 'do ' + new Date(g.deadline).toLocaleDateString('cs-CZ') : ''}</span></div></div>`;
   }).join('');
 
-  const next = Object.entries(S.plan.schedule).filter(([d]) => d >= today).sort().slice(0, 4);
-  $('nextPosts').innerHTML = next.length ? next.map(([d, name]) => {
-    const vid = S.videos.find((x) => x.name === name);
-    const slot = S.plan.slots.find((s) => s.dow === new Date(d).getDay());
-    return `<div class="spread" style="padding:6px 0;border-bottom:1px solid var(--grid)"><span><b>${d === today ? 'Dnes' : DAYS[new Date(d).getDay()] + ' ' + new Date(d).toLocaleDateString('cs-CZ')}</b> ${slot ? slot.time : ''}</span><span class="sub">${esc(vid ? vid.title : name)}${vid?.posted ? ' · ✓' : ''}</span></div>`;
-  }).join('') : '<div class="sub">Nic naplánováno — v záložce Plán klikni na „Rozvrhnout hotová videa“.</div>';
+  const next = Object.entries(S.plan.schedule).map(([k, name]) => { const [d, i] = k.split('#'); return { d, t: slotTimes(d)[+i] || '', name }; })
+    .filter((x) => x.d >= today && x.t).sort((a, b) => (a.d + a.t).localeCompare(b.d + b.t))
+    .filter((x) => { const vid = S.videos.find((v) => v.name === x.name); return !(vid?.posted?.tiktok && vid?.posted?.instagram); }).slice(0, 6);
+  const st2 = stock();
+  const warn = st2.days < 3 ? `<div class="warnbox">⚠ Hotová videa vystačí jen na <b>${st2.days.toFixed(1).replace('.', ',')} dne</b>. Při ${st2.perDay.toFixed(0)} postech denně jich potřebuješ ${Math.round(st2.perDay * 7)} týdně. <button class="btn sm" id="makeStock" style="margin-left:6px">Vyrobit 4 videa</button></div>` : '';
+  $('nextPosts').innerHTML = warn + (next.length ? next.map((x) => {
+    const vid = S.videos.find((v) => v.name === x.name);
+    const pls = Object.keys(PL).map((pl) => `<span class="badge ${vid?.posted?.[pl] ? 'ok' : ''}">${vid?.posted?.[pl] ? '✓ ' : ''}${PL_SHORT[pl]}</span>`).join(' ');
+    return `<div class="spread" style="padding:6px 0;border-bottom:1px solid var(--grid)"><span><b>${x.d === today ? 'Dnes' : DAYS[new Date(x.d + 'T12:00').getDay()] + ' ' + new Date(x.d + 'T12:00').toLocaleDateString('cs-CZ')}</b> ${x.t}</span><span class="row"><span class="sub">${esc(vid ? vid.title : x.name)}</span>${pls}</span></div>`;
+  }).join('') : '<div class="sub">Nic naplánováno — v záložce Plán klikni na „Rozvrhnout hotová videa“.</div>');
 
   let lastWeek = '';
   $('checklist').innerHTML = S.checklist.map((c) => {
@@ -410,11 +442,11 @@ function renderJobs(){
 const renderedVideos = new Map();
 function videoCard(v){
   return `<video src="/video/${encodeURIComponent(v.name)}" controls playsinline preload="metadata"></video>
-    <div class="body"><div class="spread"><span class="t">${esc(v.title)}</span>${v.posted ? '<span class="badge ok">✓ venku</span>' : ''}</div>
+    <div class="body"><div class="spread"><span class="t">${esc(v.title)}</span>${isPosted(v) ? '<span class="badge ok">✓ venku</span>' : ''}</div>
     ${v.caption ? `<div class="cap">${esc(v.caption)}</div>` : ''}
     <div class="row">${v.caption ? `<button class="btn sec sm" data-v="copy" data-name="${esc(v.name)}">Kopírovat popisek</button>` : ''}
     <a class="btn sec sm" href="/video/${encodeURIComponent(v.name)}" download style="text-decoration:none">Stáhnout</a>
-    <button class="btn ${v.posted ? 'ghost' : ''} sm" data-v="posted" data-name="${esc(v.name)}">${v.posted ? 'Vrátit' : 'Zveřejněno'}</button></div></div>`;
+    </div><div class="pl">${Object.keys(PL).map((pl) => `<button class="pbtn ${v.posted?.[pl] ? 'on' : ''}" data-v="posted" data-pl="${pl}" data-name="${esc(v.name)}" title="Označit jako zveřejněné na ${PL[pl]}">${v.posted?.[pl] ? '✓ ' : ''}${PL[pl]}</button>`).join('')}</div></div>`;
 }
 function renderVideos(){
   $('vcount').textContent = `${S.videos.length} videí`;
@@ -438,7 +470,9 @@ function renderSlots(){
   const order = [1, 2, 3, 4, 5, 6, 0];
   $('slots').innerHTML = order.map((dow) => {
     const s = S.plan.slots.find((x) => x.dow === dow);
-    return `<div class="slot ${s.on ? '' : 'off'}"><label class="row" style="justify-content:center"><input type="checkbox" data-slot="${dow}" ${s.on ? 'checked' : ''} style="accent-color:var(--pink)"> <b>${DAYS[dow]}</b></label><input type="time" data-slottime="${dow}" value="${s.time}"></div>`;
+    const t = [...s.times, '', ''].slice(0, 2);
+    return `<div class="slot ${s.on ? '' : 'off'}"><label class="row" style="justify-content:center"><input type="checkbox" data-slot="${dow}" ${s.on ? 'checked' : ''} style="accent-color:var(--pink)"> <b>${DAYS[dow]}</b></label>
+      <div class="times">${t.map((x, i) => `<input type="time" data-slottime="${dow}" data-ti="${i}" value="${x}">`).join('')}</div></div>`;
   }).join('');
 }
 let calKey = '';
@@ -452,16 +486,18 @@ function renderCal(){
   for (let i = 0; i < 14; i++){
     const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() + i);
     const k = iso(d), slot = S.plan.slots.find((s) => s.dow === d.getDay());
-    const name = S.plan.schedule[k];
-    const vid = S.videos.find((v) => v.name === name);
-    const opts = S.videos.filter((v) => !v.posted && (!planned.has(v.name) || v.name === name));
+    const rows = slot.on ? slot.times.map((t, si) => {
+      const name = S.plan.schedule[`${k}#${si}`];
+      const vid = S.videos.find((v) => v.name === name);
+      const opts = S.videos.filter((v) => (!isPosted(v) && !planned.has(v.name)) || v.name === name);
+      return `<div class="srow">${vid ? `<video src="/video/${encodeURIComponent(vid.name)}" preload="metadata" muted playsinline></video>` : '<div class="ph"></div>'}
+        <div style="min-width:0"><div class="tm">${t}</div>
+        <select data-day="${k}" data-slot-i="${si}"><option value="">${vid ? '— odebrat —' : '+ vybrat video'}</option>${opts.map((v) => `<option value="${esc(v.name)}" ${v.name === name ? 'selected' : ''}>${esc(v.title)}</option>`).join('')}</select>
+        ${vid ? `<div class="pl">${Object.keys(PL).map((pl) => `<button class="pbtn ${vid.posted?.[pl] ? 'on' : ''}" data-v="posted" data-pl="${pl}" data-name="${esc(vid.name)}">${vid.posted?.[pl] ? '✓ ' : ''}${PL_SHORT[pl]}</button>`).join('')}</div>` : ''}
+        </div></div>`;
+    }).join('') : '<div class="sub">volno</div>';
     html += `<div class="day ${i === 0 ? 'today' : ''} ${slot.on ? '' : 'off'}">
-      <div class="spread"><span class="d">${i === 0 ? 'Dnes' : DAYS[d.getDay()]} ${d.getDate()}. ${d.getMonth() + 1}.</span><span class="sub">${slot.on ? slot.time : 'volno'}</span></div>
-      ${vid ? `<video src="/video/${encodeURIComponent(vid.name)}" preload="metadata" muted playsinline></video><div class="sub">${esc(vid.title)}</div>` : ''}
-      <select data-day="${k}"><option value="">${vid ? '— odebrat —' : '+ vybrat video'}</option>${opts.map((v) => `<option value="${esc(v.name)}" ${v.name === name ? 'selected' : ''}>${esc(v.title)}</option>`).join('')}</select>
-      ${vid && !vid.posted ? `<button class="btn sm" data-v="posted" data-name="${esc(vid.name)}">Zveřejněno</button>` : ''}
-      ${vid?.posted ? '<span class="badge ok">✓ zveřejněno</span>' : ''}
-    </div>`;
+      <div class="d">${i === 0 ? 'Dnes' : DAYS[d.getDay()]} ${d.getDate()}. ${d.getMonth() + 1}.</div>${rows}</div>`;
   }
   $('cal').innerHTML = html;
 }
@@ -497,7 +533,7 @@ function barChart(el, data, { height = 200, valueLabel = (v) => fmt(v), every = 
 }
 
 function hbarChart(el, data){
-  if (!data.length){ el.innerHTML = '<div class="empty">Zatím žádná data — klikni na „Načíst statistiky z TikToku“.</div>'; return; }
+  if (!data.length){ el.innerHTML = '<div class="empty">Zatím žádná data — klikni na „Načíst z TikToku a Instagramu“.</div>'; return; }
   const W = Math.max(320, el.clientWidth || 600), rowH = 26, L = Math.min(260, W * 0.4), R = 64, H = data.length * rowH + 4;
   const max = Math.max(...data.map((d) => d.value)) || 1;
   let s = `<svg viewBox="0 0 ${W} ${H}" role="img">`;
@@ -551,14 +587,15 @@ function renderStats(){
   const key = JSON.stringify([S.stats, S.signups, $('tab-statistiky').classList.contains('on')]);
   if (key === statsKey) return;
   statsKey = key;
-  const snap = [...S.stats.snapshots].reverse().find((x) => x.videos.length);
-  const vids = snap ? snap.videos : [];
+  // Latest measurement per platform, merged, so a TikTok-only refresh doesn't hide Instagram numbers.
+  const vids = Object.keys(PL).flatMap((pl) => { const sn = [...S.stats.snapshots].reverse().find((x) => x.videos.some((v) => (v.platform || 'tiktok') === pl)); return sn ? sn.videos.filter((v) => (v.platform || 'tiktok') === pl) : []; });
+  const snap = vids.length ? { videos: vids } : null;
   const views = vids.reduce((a, v) => a + v.views, 0), eng = vids.reduce((a, v) => a + v.likes + v.comments + v.shares, 0);
   const conv = views ? S.signups.count / views * 100 : null;
-  $('statsWhen').textContent = S.stats.snapshots.length ? `Poslední měření z TikToku: ${relTime(latestSnap().at)}` : 'Z TikToku zatím nic nenačteno.';
+  $('statsWhen').textContent = S.stats.snapshots.length ? `Poslední měření: ${relTime(latestSnap().at)}` : 'Z TikToku ani Instagramu zatím nic nenačteno.';
   $('statTiles').innerHTML = [
     ['Zájemci', fmt(S.signups.count), S.signups.fetchedAt ? 'aktualizováno ' + relTime(S.signups.fetchedAt) : 'načítám…'],
-    ['Zhlédnutí', snap ? fmt(views) : '—', snap ? `${vids.length} videí` : ''],
+    ['Zhlédnutí', snap ? fmt(views) : '—', snap ? `${vids.length} postů na TikToku a IG` : ''],
     ['Engagement', views ? (eng / views * 100).toFixed(1).replace('.', ',') + ' %' : '—', 'lajky + komentáře + sdílení / zhlédnutí'],
     ['Konverze na e-mail', conv == null ? '—' : conv.toFixed(2).replace('.', ',') + ' %', 'zájemci / zhlédnutí'],
   ].map(([l, v, h]) => `<div class="panel tile"><div class="lbl">${l}</div><div class="val num">${esc(v)}</div><div class="hint">${esc(h)}</div></div>`).join('');
@@ -572,10 +609,11 @@ function renderStats(){
     days.push({ label: d.toLocaleDateString('cs-CZ'), short: `${d.getDate()}.${d.getMonth() + 1}.`, value: S.signups.rows.filter((r) => iso(new Date(r.at)) === k).length });
   }
   barChart($('chSignups'), days, { every: 5, valueLabel: (v) => `${v} ${v === 1 ? 'zájemce' : v >= 2 && v <= 4 ? 'zájemci' : 'zájemců'}` });
-  lineChart($('chFollowers'), S.stats.snapshots.filter((s) => s.followers != null).map((s) => ({ at: s.at, value: s.followers })));
-  hbarChart($('chViews'), [...vids].sort((a, b) => b.views - a.views).map((v) => ({ label: v.title || v.date, value: v.views, detail: `${v.date} · ${fmt(v.likes)} ♥ · ${fmt(v.comments)} komentářů · ${fmt(v.shares)} sdílení` })));
-  $('vtable').innerHTML = vids.length ? `<table><thead><tr><th>Video</th><th>Datum</th><th class="r">Zhlédnutí</th><th class="r">Lajky</th><th class="r">Komentáře</th><th class="r">Sdílení</th><th class="r">Engagement</th></tr></thead><tbody>${
-    [...vids].sort((a, b) => b.views - a.views).map((v) => `<tr><td>${esc(v.title)}</td><td>${esc(v.date)}</td><td class="r num">${fmt(v.views)}</td><td class="r num">${fmt(v.likes)}</td><td class="r num">${fmt(v.comments)}</td><td class="r num">${fmt(v.shares)}</td><td class="r num">${v.views ? ((v.likes + v.comments + v.shares) / v.views * 100).toFixed(1).replace('.', ',') + ' %' : '—'}</td></tr>`).join('')
+  for (const [pl, id] of [['tiktok', 'chFollowers'], ['instagram', 'chFollowersIg']])
+    lineChart($(id), S.stats.snapshots.filter((s) => fol(s, pl) != null).map((s) => ({ at: s.at, value: fol(s, pl) })));
+  hbarChart($('chViews'), [...vids].sort((a, b) => b.views - a.views).slice(0, 20).map((v) => ({ label: `${PL_SHORT[v.platform || 'tiktok']} · ${v.title || v.date}`, value: v.views, detail: `${PL[v.platform || 'tiktok']} · ${v.date} · ${fmt(v.likes)} ♥ · ${fmt(v.comments)} komentářů · ${fmt(v.shares)} sdílení` })));
+  $('vtable').innerHTML = vids.length ? `<table><thead><tr><th>Video</th><th>Síť</th><th>Datum</th><th class="r">Zhlédnutí</th><th class="r">Lajky</th><th class="r">Komentáře</th><th class="r">Sdílení</th><th class="r">Engagement</th></tr></thead><tbody>${
+    [...vids].sort((a, b) => b.views - a.views).map((v) => `<tr><td>${esc(v.title)}</td><td>${PL[v.platform || 'tiktok']}</td><td>${esc(v.date)}</td><td class="r num">${fmt(v.views)}</td><td class="r num">${fmt(v.likes)}</td><td class="r num">${fmt(v.comments)}</td><td class="r num">${fmt(v.shares)}</td><td class="r num">${v.views ? ((v.likes + v.comments + v.shares) / v.views * 100).toFixed(1).replace('.', ',') + ' %' : '—'}</td></tr>`).join('')
   }</tbody></table>` : '<div class="empty">Žádná data.</div>';
   $('signupList').innerHTML = S.signups.error ? `<div class="sub">⚠ ${esc(S.signups.error)}</div>` : S.signups.rows.length
     ? `<details><summary>${S.signups.rows.length} e-mailů</summary><table><tbody>${[...S.signups.rows].reverse().map((r) => `<tr><td>${esc(r.email)}</td><td class="r sub">${relTime(r.at)}</td></tr>`).join('')}</tbody></table></details>`
@@ -668,21 +706,23 @@ document.addEventListener('click', async (e) => {
   const b = e.target.closest('[data-v]'); if (!b) return;
   const v = S.videos.find((x) => x.name === b.dataset.name);
   if (b.dataset.v === 'copy'){ await navigator.clipboard.writeText(v.caption); return toast('Popisek zkopírován'); }
-  if (b.dataset.v === 'posted'){ await api(`/api/videos/${encodeURIComponent(v.name)}/posted`); refresh(); }
+  if (b.dataset.v === 'posted'){ await api(`/api/videos/${encodeURIComponent(v.name)}/posted`, { platform: b.dataset.pl }); refresh(); }
 });
+$('nextPosts').addEventListener('click', (e) => { if (e.target.id === 'makeStock') api('/api/jobs', { type: 'video', count: 4, prompt: 'Každé video jiný formát a jiná karta než dosavadní videa.' }).then(() => { toast('4 videa ve frontě — průběh v Tvorbě'); refresh(); }); });
 $('checklist').addEventListener('change', (e) => { const id = e.target.dataset.check; if (id) api('/api/checklist', { id, done: e.target.checked }).then(refresh); });
 $('slots').addEventListener('change', () => {
-  const slots = [0, 1, 2, 3, 4, 5, 6].map((dow) => ({ dow, on: $('slots').querySelector(`[data-slot="${dow}"]`).checked, time: $('slots').querySelector(`[data-slottime="${dow}"]`).value }));
+  const slots = [0, 1, 2, 3, 4, 5, 6].map((dow) => ({ dow, on: $('slots').querySelector(`[data-slot="${dow}"]`).checked,
+    times: [...$('slots').querySelectorAll(`[data-slottime="${dow}"]`)].map((i) => i.value).filter(Boolean) }));
   api('/api/plan', { slots }).then(() => { document.activeElement.blur(); refresh(); });
 });
-$('cal').addEventListener('change', (e) => { const d = e.target.dataset.day; if (d) api('/api/schedule', { date: d, video: e.target.value || null }).then(() => { e.target.blur(); refresh(); }); });
+$('cal').addEventListener('change', (e) => { const d = e.target.dataset.day; if (d) api('/api/schedule', { date: d, slot: +e.target.dataset.slotI, video: e.target.value || null }).then(() => { e.target.blur(); refresh(); }); });
 $('autoPlan').addEventListener('click', () => api('/api/schedule', { auto: true }).then(() => { toast('Videa rozvržena'); refresh(); }));
-$('planAI').addEventListener('click', () => api('/api/jobs', { type: 'free', prompt: 'Naplánuj zveřejňování hotových videí na příštích 14 dní podle nastavených časů (POST /api/schedule). Nejsilnější videa dej na pátek a sobotu, střídej formáty. Když je videí málo, napiš, kolik jich ještě vyrobit.' }).then(() => { toast('AI plánuje — průběh v Tvorbě'); refresh(); }));
-$('statsAI').addEventListener('click', () => api('/api/jobs', { type: 'stats' }).then(() => { toast('AI načítá statistiky z TikToku'); refresh(); }));
+$('planAI').addEventListener('click', () => api('/api/jobs', { type: 'free', prompt: 'Naplánuj zveřejňování hotových nezveřejněných videí na příštích 14 dní do volných slotů (2× denně, každé video jde na TikTok i Instagram Reels; POST /api/schedule s date a slot). Nejsilnější videa dej na večerní sloty v pátek a sobotu, střídej formáty, stejné téma nedávej dvakrát za sebou. Když je videí málo, napiš, kolik jich ještě vyrobit.' }).then(() => { toast('AI plánuje — průběh v Tvorbě'); refresh(); }));
+$('statsAI').addEventListener('click', () => api('/api/jobs', { type: 'stats' }).then(() => { toast('AI načítá statistiky z TikToku a Instagramu'); refresh(); }));
 $('refreshSignups').addEventListener('click', async (e) => { e.target.disabled = true; await api('/api/signups/refresh'); e.target.disabled = false; toast('Zájemci obnoveni'); refresh(); });
 $('saveFollowers').addEventListener('click', async () => {
   const v = +$('manFollowers').value; if (!v && v !== 0) return toast('Zadej číslo');
-  await api('/api/stats', { followers: v, videos: [], source: 'ručně' }); $('manFollowers').value = ''; toast('Uloženo'); refresh();
+  await api('/api/stats', { followers: { [$('manPlatform').value]: v }, videos: [], source: 'ručně' }); $('manFollowers').value = ''; toast('Uloženo'); refresh();
 });
 $('editGoals').addEventListener('click', () => {
   editingGoals = true;
