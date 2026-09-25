@@ -157,6 +157,20 @@
   .big{ font-size:30px; font-weight:800; }
   ul.plain{ padding-left:18px; color:var(--ink-dim); font-size:14px; }
   ul.plain li{ margin:4px 0; }
+  /* cards */
+  .ctools{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  .ctools input[type=text]{ flex:1; min-width:200px; }
+  .addcard{ display:grid; grid-template-columns:130px 1fr auto; gap:8px; }
+  .cgrid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(230px, 1fr)); gap:14px; }
+  .kcard{ background:#050507; border:1px solid var(--line); border-radius:16px; padding:14px 14px 12px; display:flex; flex-direction:column; gap:10px; min-height:230px; }
+  .kcard .ty{ font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-faint); }
+  .kcard .ty.Úkol{ color:var(--warn); } .kcard .ty.Bonus{ color:var(--ok); } .kcard .ty.Otázka{ color:var(--pink-soft); }
+  .kcard .q{ font-family:"Russo One"; color:var(--pink); font-size:19px; line-height:1.25; flex:1; overflow-wrap:anywhere; }
+  .kcard textarea{ font-size:14px; min-height:90px; }
+  .kcard .foot{ display:flex; gap:5px; flex-wrap:wrap; align-items:center; }
+  .kcard .foot .btn.sm{ padding:5px 8px; font-size:12.5px; }
+  .kcard .vids{ font-size:12px; color:var(--ok); }
+  .kcard .novid{ font-size:12px; color:var(--ink-faint); }
   .toast{ position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:var(--ink); color:var(--bg); padding:8px 16px; border-radius:10px; font-weight:700; font-size:14px; opacity:0; transition:opacity .2s; pointer-events:none; z-index:60; }
   .toast.show{ opacity:1; }
 
@@ -178,6 +192,7 @@
     <nav id="nav">
       <button data-tab="prehled" class="on">Přehled</button>
       <button data-tab="tvorba">Tvorba</button>
+      <button data-tab="karty">Karty</button>
       <button data-tab="plan">Plán</button>
       <button data-tab="statistiky">Statistiky</button>
       <button data-tab="potencial">Potenciál</button>
@@ -222,6 +237,25 @@
       <div class="panel"><h2>Úkoly</h2><div id="jobs"></div></div>
       <div class="panel"><div class="spread"><h2>Hotová videa</h2><span class="sub" id="vcount"></span></div><div class="vgrid" id="videos"></div></div>
     </div>
+  </section>
+
+  <!-- KARTY -->
+  <section class="tab" id="tab-karty">
+    <div class="panel">
+      <div class="spread"><div><h2>Balíček karet</h2><div class="sub" id="cardSummary"></div></div>
+        <button class="btn sm" id="cardsAI">AI: vymysli 10 nových karet</button></div>
+      <div class="addcard mt">
+        <select id="newType"><option>Otázka</option><option>Úkol</option><option>Bonus</option></select>
+        <input type="text" id="newText" placeholder="Nová karta, např. „Kdo z vás by…“">
+        <button class="btn sec" id="addCard">Přidat</button>
+      </div>
+      <div class="ctools mt">
+        <input type="text" id="cardSearch" placeholder="Hledat v kartách…">
+        <div class="seg" id="cardType"><button data-ct="" class="on">Vše</button><button data-ct="Otázka">Otázky</button><button data-ct="Úkol">Úkoly</button><button data-ct="Bonus">Bonusy</button></div>
+        <div class="seg" id="cardVid"><button data-cv="" class="on">Všechny</button><button data-cv="no">Bez videa</button><button data-cv="yes">S videem</button></div>
+      </div>
+    </div>
+    <div class="cgrid mt" id="cards"></div>
   </section>
 
   <!-- PLÁN -->
@@ -465,6 +499,38 @@ function renderVideos(){
   for (const [n, r] of renderedVideos) if (!keep.has(n)){ r.el.remove(); renderedVideos.delete(n); }
 }
 
+// ---------- KARTY ----------
+let cardFilter = { q: '', type: '', vid: '' };
+let editingCard = null;
+let cardsKey = '';
+function renderCards(force){
+  const key = JSON.stringify([S.cards, cardFilter, editingCard]);
+  if (key === cardsKey && !force) return;
+  if (document.activeElement?.closest?.('#cards textarea')) return; // don't wipe an edit in progress
+  cardsKey = key;
+  const withVid = S.cards.filter((c) => c.videos.length).length;
+  const byType = ['Otázka', 'Úkol', 'Bonus'].map((t) => `${S.cards.filter((c) => c.type === t).length} ${t === 'Otázka' ? 'otázek' : t === 'Úkol' ? 'úkolů' : 'bonusů'}`).join(' · ');
+  $('cardSummary').textContent = `${S.cards.length} karet (${byType}) · ${withVid} už má video, ${S.cards.length - withVid} čeká na video`;
+  const q = cardFilter.q.toLowerCase();
+  const list = S.cards.filter((c) => (!cardFilter.type || c.type === cardFilter.type)
+    && (!cardFilter.vid || (cardFilter.vid === 'yes') === c.videos.length > 0)
+    && (!q || c.text.toLowerCase().includes(q)))
+    .sort((a, b) => (a.videos.length > 0) - (b.videos.length > 0) || b.id - a.id);
+  $('cards').innerHTML = list.length ? list.map((c) => editingCard === c.id ? `
+    <div class="kcard" data-card="${c.id}">
+      <select data-f="type">${['Otázka', 'Úkol', 'Bonus'].map((t) => `<option ${t === c.type ? 'selected' : ''}>${t}</option>`).join('')}</select>
+      <textarea data-f="text">${esc(c.text)}</textarea>
+      <div class="foot"><button class="btn sm" data-c="save">Uložit</button><button class="btn ghost sm" data-c="cancel">Zrušit</button></div>
+    </div>` : `
+    <div class="kcard" data-card="${c.id}">
+      <div class="spread"><span class="ty ${esc(c.type)}">${esc(c.type)}</span><span class="sub">#${c.id}</span></div>
+      <div class="q">${esc(c.text)}</div>
+      ${c.videos.length ? `<div class="vids">🎬 ${c.videos.map((v) => esc(v.replace(/\.mp4$/, '').replace(/_/g, ' '))).join(', ')}</div>` : '<div class="novid">zatím bez videa</div>'}
+      <div class="foot"><button class="btn ${c.videos.length ? 'sec' : ''} sm" data-c="video">${c.videos.length ? 'Další video' : 'Udělat video'}</button>
+        <button class="btn ghost sm" data-c="edit">Upravit</button><button class="btn ghost sm" data-c="delete">Smazat</button></div>
+    </div>`).join('') : '<div class="empty">Žádná karta neodpovídá filtru.</div>';
+}
+
 // ---------- PLÁN ----------
 function renderSlots(){
   const order = [1, 2, 3, 4, 5, 6, 0];
@@ -666,7 +732,7 @@ function renderLive(){
 async function refresh(){
   try { S = await (await fetch('/api/state')).json(); } catch { $('liveText').textContent = 'Dashboard neodpovídá'; return; }
   if (!P){ P = { ...S.potential }; renderSliders(); }
-  renderLive(); renderOverview(); renderJobs(); renderVideos(); renderStats(); renderFunnel();
+  renderLive(); renderOverview(); renderJobs(); renderVideos(); renderStats(); renderFunnel(); renderCards();
   if (!document.activeElement?.closest?.('#slots')) renderSlots();
   if (!document.activeElement?.closest?.('#cal')) renderCal();
 }
@@ -709,6 +775,29 @@ document.addEventListener('click', async (e) => {
   if (b.dataset.v === 'posted'){ await api(`/api/videos/${encodeURIComponent(v.name)}/posted`, { platform: b.dataset.pl }); refresh(); }
 });
 $('nextPosts').addEventListener('click', (e) => { if (e.target.id === 'makeStock') api('/api/jobs', { type: 'video', count: 4, prompt: 'Každé video jiný formát a jiná karta než dosavadní videa.' }).then(() => { toast('4 videa ve frontě — průběh v Tvorbě'); refresh(); }); });
+$('addCard').addEventListener('click', async () => {
+  const text = $('newText').value.trim(); if (!text) return toast('Napiš text karty');
+  await api('/api/cards', { action: 'add', type: $('newType').value, text }); $('newText').value = ''; toast('Karta přidána'); refresh();
+});
+$('newText').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('addCard').click(); });
+$('cardSearch').addEventListener('input', (e) => { cardFilter.q = e.target.value; renderCards(); });
+for (const [id, k, attr] of [['cardType', 'type', 'ct'], ['cardVid', 'vid', 'cv']]) $(id).addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  cardFilter[k] = b.dataset[attr]; $(id).querySelectorAll('button').forEach((x) => x.classList.toggle('on', x === b)); renderCards();
+});
+$('cards').addEventListener('click', async (e) => {
+  const b = e.target.closest('[data-c]'); if (!b) return;
+  const el = b.closest('[data-card]'), id = +el.dataset.card, c = S.cards.find((x) => x.id === id), act = b.dataset.c;
+  if (act === 'edit'){ editingCard = id; renderCards(true); el.parentNode.querySelector(`[data-card="${id}"] textarea`)?.focus(); return; }
+  if (act === 'cancel'){ editingCard = null; renderCards(true); return; }
+  if (act === 'save'){ await api('/api/cards', { action: 'update', id, type: el.querySelector('[data-f=type]').value, text: el.querySelector('[data-f=text]').value }); editingCard = null; toast('Uloženo'); document.activeElement.blur(); return refresh(); }
+  if (act === 'delete'){ if (!confirm(`Smazat kartu „${c.text}“?`)) return; await api('/api/cards', { action: 'delete', id }); toast('Karta smazána'); return refresh(); }
+  if (act === 'video'){
+    await api('/api/jobs', { type: 'video', prompt: `Použij tuhle kartu (${c.type}): „${c.text}“${c.videos.length ? ' — už má video, vymysli úplně jinou scénu než v ' + c.videos.join(', ') : ''}` });
+    toast('Video ve frontě — průběh v Tvorbě'); refresh();
+  }
+});
+$('cardsAI').addEventListener('click', () => api('/api/jobs', { type: 'free', prompt: 'Projdi balíček karet (GET /api/state → cards) a vymysli 10 nových karet ve stejném stylu: mix otázek „kdo z vás by…“, úkolů a pár bonusů, drzý roast tón, 18+, ale ne nechutné. Neopakuj existující. Každou přidej přes POST /api/cards {"action":"add","type":…,"text":…}. V reportu je vypiš.' }).then(() => { toast('AI vymýšlí karty — průběh v Tvorbě'); refresh(); }));
 $('checklist').addEventListener('change', (e) => { const id = e.target.dataset.check; if (id) api('/api/checklist', { id, done: e.target.checked }).then(refresh); });
 $('slots').addEventListener('change', () => {
   const slots = [0, 1, 2, 3, 4, 5, 6].map((dow) => ({ dow, on: $('slots').querySelector(`[data-slot="${dow}"]`).checked,

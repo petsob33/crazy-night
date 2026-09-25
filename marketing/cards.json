@@ -1,12 +1,102 @@
 [
-  "Kdo ze skupiny by první prásknul tajemství za 500 Kč?",
-  "Kdo by nejdýl vydržel bez telefonu na pustém ostrově?",
-  "Kdo si o sobě myslí nejvíc, aniž by k tomu měl(a) důvod?",
-  "Kdo by se nejrychleji sesypal, kdyby ho dneska opustil parťák?",
-  "Kdo je největší drama queen/king v místnosti?",
-  "Komu byste nejmíň věřili, že jde jen na jedno pivo?",
-  "Kdo by první utekl, kdyby na párty dorazila bývalka/bývalý?",
-  "Kdo z vás by prodal kamaráda za pár lajků na Instagramu?",
-  "Kdo naposledy lhal někomu u tohohle stolu — a kdo to ví?",
-  "Kdo by nejdýl vydržel nemluvit, i kdyby šlo o život?"
+  {
+    "id": 1,
+    "type": "Otázka",
+    "text": "Kdo ze skupiny by byl pornstar?"
+  },
+  {
+    "id": 2,
+    "type": "Úkol",
+    "text": "Udělej pushup nad vybraným hráčem."
+  },
+  {
+    "id": 3,
+    "type": "Úkol",
+    "text": "Udělej sexy tanec na židli hráči vpravo."
+  },
+  {
+    "id": 4,
+    "type": "Bonus",
+    "text": "Nemusíš pít 1 kolo."
+  },
+  {
+    "id": 5,
+    "type": "Bonus",
+    "text": "Dej svou kartičku někomu jinému."
+  },
+  {
+    "id": 6,
+    "type": "Úkol",
+    "text": "Ukaž všem poslední fotku v galerii."
+  },
+  {
+    "id": 7,
+    "type": "Úkol",
+    "text": "Přečti nahlas poslední zprávu, kterou jsi poslal/a ex."
+  },
+  {
+    "id": 8,
+    "type": "Otázka",
+    "text": "Kdo z vás by v hororu umřel jako první?"
+  },
+  {
+    "id": 9,
+    "type": "Úkol",
+    "text": "Zavolej mámě a řekni jí, že ses zamiloval/a."
+  },
+  {
+    "id": 10,
+    "type": "Úkol",
+    "text": "Nech hráče vlevo napsat story na tvůj Instagram."
+  },
+  {
+    "id": 11,
+    "type": "Otázka",
+    "text": "Kdo je největší drama queen/king v místnosti?"
+  },
+  {
+    "id": 12,
+    "type": "Otázka",
+    "text": "Kdo ze skupiny by první prásknul tajemství za 500 Kč?"
+  },
+  {
+    "id": 13,
+    "type": "Otázka",
+    "text": "Kdo by nejdýl vydržel bez telefonu na pustém ostrově?"
+  },
+  {
+    "id": 14,
+    "type": "Otázka",
+    "text": "Kdo si o sobě myslí nejvíc, aniž by k tomu měl(a) důvod?"
+  },
+  {
+    "id": 15,
+    "type": "Otázka",
+    "text": "Kdo by se nejrychleji sesypal, kdyby ho dneska opustil parťák?"
+  },
+  {
+    "id": 16,
+    "type": "Otázka",
+    "text": "Komu byste nejmíň věřili, že jde jen na jedno pivo?"
+  },
+  {
+    "id": 17,
+    "type": "Otázka",
+    "text": "Kdo by první utekl, kdyby na párty dorazila bývalka/bývalý?"
+  },
+  {
+    "id": 18,
+    "type": "Otázka",
+    "text": "Kdo z vás by prodal kamaráda za pár lajků na Instagramu?"
+  },
+  {
+    "id": 19,
+    "type": "Otázka",
+    "text": "Kdo naposledy lhal někomu u tohohle stolu — a kdo to ví?"
+  },
+  {
+    "id": 20,
+    "type": "Otázka",
+    "text": "Kdo by nejdýl vydržel nemluvit, i kdyby šlo o život?"
+  }
 ]

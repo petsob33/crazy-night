@@ -6,6 +6,8 @@ Lokální webový dashboard pro marketing Crazy Night: `npm run dashboard` → h
 - **Tvorba:** zadáš video nebo volný úkol a dashboard spustí Claude Code (`claude -p --chrome`)
   se skillem `crazynight-video`. Průběh vidíš živě, na hotový úkol můžeš navázat další zprávou.
   Hotová videa z `~/Downloads/crazy_night_videa` jsou v galerii.
+- **Karty:** balíček z `marketing/cards.json` (otázky, úkoly, bonusy) — přidávání, úpravy, hledání, filtr „bez videa“,
+  tlačítko „Udělat video“ u každé karty a AI, která vymyslí nové. Párování karta → video je z `raw/NN_spec.json`.
 - **Plán:** 2 posty denně (TikTok + Instagram Reels), časy po dnech a kalendář na 14 dní (ručně, automaticky, nebo přes AI).
   U každého videa se zveřejnění odškrtává zvlášť pro TikTok a Instagram.
 - **Statistiky:** zájemci z Vercel Blob (`npm run zajemci`) a čísla z TikToku a Instagramu, která načte Claude

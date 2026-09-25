@@ -11,6 +11,8 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO = path.resolve(HERE, '..');
 const DATA = path.join(HERE, 'data');
 const VIDEOS = path.join(os.homedir(), 'Downloads/crazy_night_videa');
+const CARDS_FILE = path.join(REPO, 'marketing/cards.json');
+const CARD_TYPES = ['Otázka', 'Úkol', 'Bonus'];
 const PORT = Number(process.env.PORT || 4321);
 fs.mkdirSync(DATA, { recursive: true });
 
@@ -70,6 +72,8 @@ const API_HELP = `Dashboard běží na http://localhost:${PORT} a má API (volej
 - POST /api/schedule {"date":"YYYY-MM-DD","slot":0|1,"video":"NN_nazev.mp4" | null} — naplánuje video do slotu dne
   (postuje se 2× denně, každé video na TikTok i Instagram Reels; časy slotů jsou v plan.slots[].times)
 - POST /api/goals {"goals":[...]} — přepíše cíle (stejný tvar jako v /api/state)
+- POST /api/cards {"action":"add","type":"Otázka|Úkol|Bonus","text":"…"} — přidá kartu do balíčku (marketing/cards.json)
+  (také {"action":"update","id":N,"type":…,"text":…} a {"action":"delete","id":N})
 - POST /api/stats {"followers":{"tiktok":N,"instagram":N},"videos":[{"platform":"tiktok|instagram","title":"…","date":"YYYY-MM-DD","views":N,"likes":N,"comments":N,"shares":N}]}`;
 
 const STATS_INSTRUCTION = `Aktualizuj statistiky Crazy Night z TikToku a Instagramu do dashboardu.
@@ -280,6 +284,36 @@ function autoSchedule() {
   }
 }
 
+// ---------- cards ----------
+const normCard = (t) => String(t || '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+function readCards() {
+  const raw = JSON.parse(fs.readFileSync(CARDS_FILE, 'utf8'));
+  return raw.map((c, i) => typeof c === 'string' ? { id: i + 1, type: 'Otázka', text: c } : c);
+}
+function writeCards(cards) {
+  fs.writeFileSync(CARDS_FILE + '.tmp', JSON.stringify(cards, null, 2) + '\n');
+  fs.renameSync(CARDS_FILE + '.tmp', CARDS_FILE);
+}
+// Which finished video used which card: the edit specs (raw/NN_spec.json) name the card and the output file.
+function cardVideos() {
+  const map = {};
+  const dir = path.join(VIDEOS, 'raw');
+  if (!fs.existsSync(dir)) return map;
+  for (const f of fs.readdirSync(dir).filter((x) => x.endsWith('_spec.json'))) {
+    try {
+      const spec = JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8'));
+      const video = path.basename(spec.out || '');
+      for (const o of spec.overlays || []) if (o.type === 'card') (map[normCard(o.text)] ||= []).push(video);
+    } catch {}
+  }
+  return map;
+}
+function cardsPublic() {
+  const used = cardVideos();
+  const have = new Set(listVideos().map((v) => v.name));
+  return readCards().map((c) => ({ ...c, videos: (used[normCard(c.text)] || []).filter((v) => have.has(v)) }));
+}
+
 // ---------- http ----------
 function json(res, code, body) {
   res.writeHead(code, { 'content-type': 'application/json; charset=utf-8' });
@@ -302,7 +336,7 @@ http.createServer(async (req, res) => {
     if (req.method === 'GET' && p === '/api/state') {
       return json(res, 200, {
         jobs: db.jobs.slice(0, 30), videos: listVideos(), stats: db.stats, plan: db.plan,
-        goals: db.goals, checklist: db.checklist, potential: db.potential, signups: signupsPublic(),
+        goals: db.goals, checklist: db.checklist, potential: db.potential, signups: signupsPublic(), cards: cardsPublic(),
       });
     }
     if (req.method === 'POST' && p === '/api/signups/refresh') { await refreshSignups(true); return json(res, 200, signupsPublic()); }
@@ -360,6 +394,28 @@ http.createServer(async (req, res) => {
       if (!item) return json(res, 404, { error: 'Položka neexistuje.' });
       item.done = !!done;
       save();
+      return json(res, 200, { ok: true });
+    }
+    if (req.method === 'POST' && p === '/api/cards') {
+      const { action, id, type, text } = await body(req);
+      const cards = readCards();
+      const t = String(text || '').trim().slice(0, 300);
+      const ty = CARD_TYPES.includes(type) ? type : 'Otázka';
+      if (action === 'add') {
+        if (!t) return json(res, 400, { error: 'Karta nemá text.' });
+        if (cards.some((c) => normCard(c.text) === normCard(t))) return json(res, 409, { error: 'Taková karta už v balíčku je.' });
+        const card = { id: Math.max(0, ...cards.map((c) => c.id)) + 1, type: ty, text: t, added: new Date().toISOString().slice(0, 10) };
+        writeCards([...cards, card]);
+        return json(res, 200, { ok: true, id: card.id });
+      }
+      const card = cards.find((c) => c.id === +id);
+      if (!card) return json(res, 404, { error: 'Karta neexistuje.' });
+      if (action === 'update') {
+        if (!t) return json(res, 400, { error: 'Karta nemá text.' });
+        Object.assign(card, { text: t, type: ty });
+        writeCards(cards);
+      } else if (action === 'delete') writeCards(cards.filter((c) => c !== card));
+      else return json(res, 400, { error: 'Neznámá akce.' });
       return json(res, 200, { ok: true });
     }
     if (req.method === 'POST' && p === '/api/potential') {
