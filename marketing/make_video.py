@@ -143,7 +143,16 @@ def main(spec_path):
         fc.append(f"[{last}][o{i}]overlay=0:0:enable='between(t,{s},{e})'[v{i+1}]")
         last = f"v{i+1}"
     # audio: raw audio, padded; optional duck after end_start
-    fc.append(f"[0:a]apad,atrim=0:{dur},afade=t=out:st={dur-1.2}:d=1.2[aout]")
+    # "raw_volume": 0 mutes Veo's own soundtrack; "music": path to a track mixed underneath
+    rv = spec.get("raw_volume", 1.0)
+    if spec.get("music"):
+        inputs += ["-stream_loop", "-1", "-i", spec["music"]]
+        mi = len(layers) + 1
+        fc.append(f"[0:a]apad,atrim=0:{dur},volume={rv}[ra]")
+        fc.append(f"[{mi}:a]atrim=0:{dur},volume={spec.get('music_volume', 0.8)}[ma]")
+        fc.append(f"[ra][ma]amix=inputs=2:duration=first:normalize=0,afade=t=out:st={dur-1.2}:d=1.2[aout]")
+    else:
+        fc.append(f"[0:a]apad,atrim=0:{dur},volume={rv},afade=t=out:st={dur-1.2}:d=1.2[aout]")
     cmd = ["ffmpeg", "-v", "error", "-y", *inputs, "-filter_complex", ";".join(fc),
            "-map", f"[{last}]", "-map", "[aout]", *H264,
            "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart",
