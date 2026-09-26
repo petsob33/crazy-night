@@ -234,6 +234,17 @@
   .spec .val{ font-family:'Unbounded'; font-weight: 800; font-size: 22px; color: var(--pink-soft); }
   .spec .lbl{ font-size: 13px; color: var(--ink-faint); margin-top: 4px; }
 
+  /* ---------- LIVE STATS ---------- */
+  .stats{
+    display:none; grid-template-columns: repeat(var(--n, 2), 1fr);
+    border-top: 1px solid #211C29; border-bottom: 1px solid #211C29;
+    padding-top: 24px; padding-bottom: 24px; margin-bottom: 40px;
+  }
+  .stats.show{ display:grid; }
+  .stats .spec .val{ font-size: clamp(26px, 3.4vw, 34px); color: var(--ink); }
+  @media (max-width: 560px){ .stats .spec{ padding: 0 12px; } .stats .spec:first-child{ padding-left: 0; } }
+  .stats .spec .lbl a{ color: var(--ink-dim); }
+
   /* ---------- BOTTOM CTA ---------- */
   .bottom-cta{ padding-top: 10px; padding-bottom: 70px; }
   .bottom-cta h2{
@@ -337,6 +348,8 @@
       <button class="draw-again" id="drawAgain">Zamíchat a táhnout znovu</button>
     </div>
   </div>
+
+  <div class="wrap stats" id="stats" aria-live="polite"></div>
 
   <div class="wrap explainer">
     <h2>Co se tady vlastně děje</h2>
@@ -481,6 +494,30 @@
 
   handleSignup(document.getElementById('signupForm'), document.getElementById('emailInput'), document.getElementById('successMsg'), document.getElementById('formError'));
   handleSignup(document.getElementById('signupForm2'), document.getElementById('emailInput2'), document.getElementById('successMsg2'), document.getElementById('formError2'));
+
+  // ---------- Live stats (/api/stats, cachované hodinu) ----------
+  // Počet zájemců ukazujeme až od SIGNUPS_MIN, malé číslo by spíš odrazovalo.
+  var SIGNUPS_MIN = 25;
+  fetch('/api/stats')
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(d){
+      if (!d) return;
+      var fmt = new Intl.NumberFormat('cs-CZ', { notation: 'compact', maximumFractionDigits: 1 });
+      var items = [];
+      if (d.tiktok){
+        items.push([fmt.format(d.tiktok.followers), 'sledujících na <a href="https://www.tiktok.com/@dyos_app" target="_blank" rel="noopener">TikToku</a>']);
+        items.push([fmt.format(d.tiktok.likes), 'lajků na našich videích']);
+      }
+      if (d.signups >= SIGNUPS_MIN) items.push([fmt.format(d.signups), 'lidí už čeká na hru']);
+      if (!items.length) return;
+      var box = document.getElementById('stats');
+      box.innerHTML = items.map(function(it){
+        return '<div class="spec"><div class="val">' + it[0] + '</div><div class="lbl">' + it[1] + '</div></div>';
+      }).join('');
+      box.style.setProperty('--n', items.length);
+      box.classList.add('show');
+    })
+    .catch(function(){});
 
   document.querySelectorAll('footer span:first-child').forEach(function(el){
     el.textContent = el.textContent.replace('{YEAR}', new Date().getFullYear());
